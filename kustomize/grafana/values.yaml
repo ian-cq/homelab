@@ -1,0 +1,29 @@
+persistence:
+  enabled: true
+testFramework:
+  enabled: false
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - "grafana.quanianitis.com"
+  tls:
+    - secretName: letsencrypt_quanianitis_com_production
+      hosts:
+        - "*.quanianitis.com"
+admin:
+  existingSecret: "grafana"
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server
+        access: proxy
+      - name: Fluentd
+        type: fluentd
+        url: http://fluentd:9880
+        access: proxy
