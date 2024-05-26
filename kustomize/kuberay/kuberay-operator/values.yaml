@@ -1,0 +1,24 @@
+### Default configs: https://github.com/ray-project/kuberay/blob/release-1.0/helm-chart/kuberay-operator/values.yaml
+
+rbacEnable: false
+crNamespacedRbacEnable: false
+
+# When singleNamespaceInstall is true:
+# - Install namespaced RBAC resources such as Role and RoleBinding instead of cluster-scoped ones like ClusterRole and ClusterRoleBinding so that
+#   the chart can be installed by users with permissions restricted to a single namespace.
+#   (Please note that this excludes the CRDs, which can only be installed at the cluster scope.)
+# - Will use Role & Rolebinding resources in ./templates/multiple_namespaces_role.yaml & ./templates/multiple_namespaces_rolebinding.yaml
+singleNamespaceInstall: true
+
+# The KubeRay operator will watch the custom resources in the namespaces listed in the "watchNamespace" parameter.
+watchNamespace:
+  - mlops
+
+env:
+  - name: ENABLE_INIT_CONTAINER_INJECTION
+    value: "true"
+
+service:
+  type: ClusterIP
+  port: 8080
+
