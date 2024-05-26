@@ -1,0 +1,7 @@
+operator:
+  create: true
+  token:
+    name: 1password-token
+
+connect:
+  credentialsName: 1password-credentials
