@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: guestbook
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters: {}
+    - git:
+        repoURL: https://github.com/ian-chan-ml/homelab.git
+        revision: HEAD
+        files:
+          - path: "deploy/quanianitis/*.yaml"
+  template:
+    metadata:
+      name: '{{ .nameNormalized }}-{{ trimSuffix ".yaml" .path.filenameNormalized }}' 
+      labels:
+        quanianitis.com/application: '{{ trimSuffix ".yaml" .path.filenameNormalized }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ian-chan-ml/homelab.git
+        targetRevision: '{{ default "HEAD" .targetRevision }}'
+        path: "{{ .path }}"
+      destination:
+        name: 'quanianitis.com' 
+        namespace: '{{ default "default" .namespace }}'
+    
