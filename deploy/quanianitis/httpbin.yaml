@@ -1,0 +1,2 @@
+path: "kustomize/httpbin"
+namespace: "staging"
