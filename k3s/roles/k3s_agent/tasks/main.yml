@@ -33,6 +33,7 @@
         INSTALL_K3S_SKIP_START: "true"
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
         INSTALL_K3S_EXEC: "agent"
+        K3S_LB_SERVER_PORT: "6449"
       changed_when: true
 
 - name: Copy K3s service file

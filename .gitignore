@@ -38,3 +38,10 @@ Session.vim
 
 .history
 charts/kustomize/1password-connect/charts
+charts/kustomize/argocd/charts
+charts/kustomize/opentelemetry/charts
+charts/kustomize/1password-connect/output
+charts/kustomize/1password-connect/token
+charts/kustomize/1password-connect/op-credentials.yaml
+charts/kustomize/1password-connect/cloudflare_api_key.yaml
+charts/kustomize/1password-connect/1password-credentials.json
