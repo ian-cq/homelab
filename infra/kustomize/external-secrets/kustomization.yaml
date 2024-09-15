@@ -8,4 +8,4 @@ helmCharts:
     releaseName: external-secrets
     includeCRDs: true
 
-namespace: kube-system
+namespace: external-secrets

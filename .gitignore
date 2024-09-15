@@ -38,3 +38,4 @@ Session.vim
 
 .history
 infra/kustomize/1password-connect/charts
+infra/kustomize/external-secrets/charts
