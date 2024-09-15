@@ -37,4 +37,4 @@ Session.vim
 **/charts/*.tgz
 
 .history
-charts/kustomize/1password-connect/charts
+infra/kustomize/1password-connect/charts
