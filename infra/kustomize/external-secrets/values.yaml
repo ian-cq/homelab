@@ -1,0 +1,9 @@
+webhook:
+  create: false
+
+certController:
+  create: false
+
+crds:
+  conversion:
+    enabled: false
