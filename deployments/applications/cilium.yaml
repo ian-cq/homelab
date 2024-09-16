@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: quanianitis.system.in-cluster.cilium
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    name: ''
+    namespace: kube-system
+    server: https://kubernetes.default.svc
+  source:
+    path: infra/kustomize/cilium
+    repoURL: https://github.com/ian-chan-ml/homelab.git
+    targetRevision: HEAD
+    kustomize:
+      namespace: ''
+  sources: []
+  project: default
+  syncPolicy:
+    automated: null
+    syncOptions:
+      - RespectIgnoreDifferences=true
+      - CreateNamespace=true
