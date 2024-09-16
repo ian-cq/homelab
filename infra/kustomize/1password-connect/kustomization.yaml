@@ -3,10 +3,7 @@ kind: Kustomization
 
 helmCharts:
 - name: connect
-  version: 1.15.0
+  version: 1.16.0
   repo: https://1password.github.io/connect-helm-charts
   releaseName: 1password
   valuesFile: values.yaml
-
-resources:
-  - secrets.yaml
