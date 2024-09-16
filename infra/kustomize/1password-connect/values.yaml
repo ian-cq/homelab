@@ -1,2 +1,2 @@
 connect:
-  credentials: op://quanianitis.com/1password-credentials/1password-credentials.json 
+  # credentials: op://quanianitis.com/1password-credentials/1password-credentials.json 
