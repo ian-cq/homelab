@@ -20,8 +20,8 @@ spec:
       project: default
       source:
         repoURL: https://github.com/ian-chan-ml/homelab.git
-        targetRevision: '{{ default "HEAD" .targetRevision }}'
-        path: "{{ .path }}"
+        targetRevision: 'HEAD'
+        path: '{{ .path }}'
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{ default "default" .namespace }}'
