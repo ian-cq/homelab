@@ -1,2 +1,0 @@
-path: "kustomize/grafana"
-namespace: "monitoring"

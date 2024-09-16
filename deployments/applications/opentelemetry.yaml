@@ -1,2 +1,2 @@
-path: "kustomize/opentelemetry"
+path: "infra/kustomize/opentelemetry"
 namespace: "monitoring"

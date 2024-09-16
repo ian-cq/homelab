@@ -1,2 +1,2 @@
-path: "kustomize/fluentd"
+path: "infra/kustomize/fluentd"
 namespace: "monitoring"

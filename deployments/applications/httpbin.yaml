@@ -1,2 +1,2 @@
-path: "kustomize/httpbin"
+path: "infra/kustomize/httpbin"
 namespace: "staging"

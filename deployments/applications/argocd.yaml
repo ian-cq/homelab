@@ -1,2 +1,2 @@
-path: "kustomize/argocd"
+path: "infra/kustomize/argocd"
 namespace: "argocd"

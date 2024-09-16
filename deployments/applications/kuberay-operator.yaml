@@ -1,3 +1,0 @@
-path: "kustomize/kuberay/kuberay-operator"
-namespace: "kuberay"
-
