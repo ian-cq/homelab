@@ -1,2 +1,2 @@
 chartsPath: "infra/kustomize/httpbin"
-destNamespace: "staging"
+destNamespace: "default"

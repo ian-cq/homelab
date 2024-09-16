@@ -9,7 +9,7 @@ spec:
         repoURL: https://github.com/ian-chan-ml/homelab.git
         revision: HEAD
         files:
-          - path: "deployments/applications/**/*.yaml"
+          - path: "deployments/applications/*.yaml"
   template:
     metadata:
       name: 'quanianitis.in-cluster.system.{{ trimSuffix ".yaml" .path.filenameNormalized}}'
@@ -17,6 +17,11 @@ spec:
         quanianitis.com/application: '{{ trimSuffix ".yaml" .path.filenameNormalized }}'
     spec:
       project: default
+      syncPolicy: 
+        automated:
+          selfHeal: true    
+        syncOptions:
+        - CreateNamespace=true  
       source:
         repoURL: https://github.com/ian-chan-ml/homelab.git
         targetRevision: 'HEAD'

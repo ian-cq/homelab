@@ -1,0 +1,2 @@
+chartsPath: "infra/kustomize/cilium"
+destNamespace: "kube-system"
