@@ -1,2 +1,2 @@
-path: "infra/kustomize/httpbin"
-namespace: "staging"
+chartsPath: "infra/kustomize/httpbin"
+destNamespace: "staging"

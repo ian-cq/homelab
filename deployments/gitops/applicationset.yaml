@@ -21,8 +21,8 @@ spec:
       source:
         repoURL: https://github.com/ian-chan-ml/homelab.git
         targetRevision: 'HEAD'
-        path: '{{ .path }}'
+        path: '{{ .chartsPath }}'
       destination:
         server: 'https://kubernetes.default.svc'
-        namespace: 'default' # '{{ default .namespace "default" }}'
+        namespace: '{{ .destNamespace }}'
     

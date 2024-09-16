@@ -1,2 +1,2 @@
-path: "infra/kustomize/argocd"
-namespace: "argocd"
+chartsPath: "infra/kustomize/argocd"
+destNamespace: "argocd"

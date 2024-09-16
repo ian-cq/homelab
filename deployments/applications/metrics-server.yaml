@@ -1,2 +1,2 @@
-path: "infra/kustomize/metrics-server"
-namespace: "monitoring"
+chartsPath: "infra/kustomize/metrics-server"
+destNamespace: "monitoring"

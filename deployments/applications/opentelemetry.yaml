@@ -1,2 +1,2 @@
-path: "infra/kustomize/opentelemetry"
-namespace: "monitoring"
+chartsPath: "infra/kustomize/opentelemetry"
+destNamespace: "monitoring"

@@ -1,2 +1,2 @@
-path: "infra/kustomize/kube-state-metrics"
-namespace: "monitoring"
+chartsPath: "infra/kustomize/kube-state-metrics"
+destNamespace: "monitoring"

@@ -1,2 +1,2 @@
-path: "infra/kustomize/fluentd"
-namespace: "monitoring"
+chartsPath: "infra/kustomize/fluentd"
+destNamespace: "monitoring"
