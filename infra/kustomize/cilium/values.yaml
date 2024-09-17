@@ -1,0 +1,20 @@
+nodePort:
+  # -- Enable the Cilium NodePort service implementation.
+  enabled: true
+
+operator:
+  replicas: 1
+
+gatewayAPI:
+  enabled: true
+
+bgp:
+  enabled: true
+  announce:
+    loadbalancerIP: true
+    podCIDR: true
+
+ingressController:
+  enabled: true
+  default: true
+  loadbalancerMode: dedicated
