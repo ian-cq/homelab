@@ -8,4 +8,4 @@ helmCharts:
     releaseName: cilium
     namespace: kube-system
     valuesFile: values.yaml
-    enabledCRDs: true
+    includeCRDs: true
