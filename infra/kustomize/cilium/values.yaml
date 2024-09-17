@@ -8,11 +8,11 @@ operator:
 gatewayAPI:
   enabled: true
 
-bgp:
-  enabled: true
-  announce:
-    loadbalancerIP: true
-    podCIDR: true
+# bgp:
+#   enabled: true
+#   announce:
+#     loadbalancerIP: true
+#     podCIDR: true
 
 ingressController:
   enabled: true
