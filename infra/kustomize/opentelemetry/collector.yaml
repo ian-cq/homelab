@@ -17,13 +17,6 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: spec.nodeName
-  ports:
-    otlp:
-      enabled: true
-    otlp-http:
-      enabled: true
-    metrics:
-      enabled: true
   config:
     extensions:
       health_check:
