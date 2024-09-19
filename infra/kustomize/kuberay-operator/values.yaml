@@ -1,8 +1,5 @@
 ### Default configs: https://github.com/ray-project/kuberay/blob/release-1.0/helm-chart/kuberay-operator/values.yaml
 
-rbacEnable: false
-crNamespacedRbacEnable: false
-
 # When singleNamespaceInstall is true:
 # - Install namespaced RBAC resources such as Role and RoleBinding instead of cluster-scoped ones like ClusterRole and ClusterRoleBinding so that
 #   the chart can be installed by users with permissions restricted to a single namespace.
