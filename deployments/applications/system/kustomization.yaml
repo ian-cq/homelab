@@ -13,3 +13,4 @@ resources:
   - httpbin.yaml
   - namespaces.yaml
   - cert-manager.yaml
+  - kuberay-operator.yaml
