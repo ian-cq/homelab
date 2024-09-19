@@ -1,2 +1,21 @@
-chartsPath: "infra/kustomize/kube-state-metrics"
-destNamespace: "monitoring"
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-state-metrics
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  source:
+    path: infra/kustomize/kube-state-metrics
+    repoURL: https://github.com/ian-chan-ml/homelab.git
+    targetRevision: HEAD
+  sources: []
+  project: default
+  syncPolicy:
+    automated: null
+    syncOptions:
+      - RespectIgnoreDifferences=true
+      - CreateNamespace=true

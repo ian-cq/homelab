@@ -1,32 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
+kind: Application
 metadata:
-  name: quanianitis
+  name: quanianitis.in-cluster.system.applications
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  goTemplate: true
-  generators:
-    - git:
-        repoURL: https://github.com/ian-chan-ml/homelab.git
-        revision: HEAD
-        files:
-          - path: "deployments/applications/*.yaml"
-  template:
-    metadata:
-      name: 'quanianitis.in-cluster.system.{{ trimSuffix ".yaml" .path.filenameNormalized}}'
-      labels:
-        quanianitis.com/application: '{{ trimSuffix ".yaml" .path.filenameNormalized }}'
-    spec:
-      project: default
-      syncPolicy: 
-        automated:
-          allowEmpty: true
-        syncOptions:
-        - CreateNamespace=true  
-      source:
-        repoURL: https://github.com/ian-chan-ml/homelab.git
-        targetRevision: 'HEAD'
-        path: '{{.chartsPath}}'
-      destination:
-        server: 'https://kubernetes.default.svc'
-        namespace: '{{.destNamespace}}'
-    
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  source:
+    path: deployments/applications/system
+    repoURL: https://github.com/ian-chan-ml/homelab
+    targetRevision: HEAD
+    kustomize:
+      namePrefix: quanianitis.in-cluster.system.
+  sources: []
+  project: default

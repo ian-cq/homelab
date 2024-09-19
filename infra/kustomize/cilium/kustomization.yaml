@@ -9,3 +9,6 @@ helmCharts:
     namespace: kube-system
     valuesFile: values.yaml
     includeCRDs: true
+
+resources:
+  - gatewayclass.yaml

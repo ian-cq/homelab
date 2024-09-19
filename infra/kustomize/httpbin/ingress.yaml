@@ -2,10 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
 spec:
-  ingressClassName: nginx
+  ingressClassName: cilium
   rules:
     - host: "httpbin.quanianitis.com"
       http:
@@ -17,7 +15,3 @@ spec:
                 name: httpbin
                 port:
                   number: 80
-  tls:
-    - hosts:
-        - "*.quanianitis.com"
-      secretName: letsencrypt_quanianitis_com_production
