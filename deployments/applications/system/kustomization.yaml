@@ -11,4 +11,4 @@ resources:
   - kube-state-metrics.yaml
   - opentelemetry.yaml
   - httpbin.yaml
-
+  - namespaces.yaml
