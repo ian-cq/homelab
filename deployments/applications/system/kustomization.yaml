@@ -12,3 +12,4 @@ resources:
   - opentelemetry.yaml
   - httpbin.yaml
   - namespaces.yaml
+  - cert-manager.yaml
