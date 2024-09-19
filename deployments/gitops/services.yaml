@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: quanianitis.in-cluster.system.applications
+  name: services
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -9,10 +9,10 @@ spec:
     namespace: argocd
     server: https://kubernetes.default.svc
   source:
-    path: deployments/applications/system
+    path: deployments/applications/services
     repoURL: https://github.com/ian-chan-ml/homelab
     targetRevision: HEAD
     kustomize:
-      namePrefix: quanianitis.in-cluster.system.
+      namePrefix: quanianitis.in-cluster.services.
   sources: []
   project: default

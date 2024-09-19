@@ -4,4 +4,8 @@ kind: Kustomization
 namespace: argocd
 
 resources:
-  - applicationset.yaml
+  - system.yaml
+  - services.yaml
+
+namePrefix: quanianitis.in-cluster.
+nameSuffix: .applications
