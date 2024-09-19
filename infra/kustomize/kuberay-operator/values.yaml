@@ -5,7 +5,7 @@
 #   the chart can be installed by users with permissions restricted to a single namespace.
 #   (Please note that this excludes the CRDs, which can only be installed at the cluster scope.)
 # - Will use Role & Rolebinding resources in ./templates/multiple_namespaces_role.yaml & ./templates/multiple_namespaces_rolebinding.yaml
-singleNamespaceInstall: true
+# singleNamespaceInstall: true
 
 # The KubeRay operator will watch the custom resources in the namespaces listed in the "watchNamespace" parameter.
 watchNamespace:
