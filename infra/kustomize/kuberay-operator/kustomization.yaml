@@ -6,8 +6,7 @@ namespace: mlops
 helmCharts:
   - name: kuberay-operator
     repo: https://ray-project.github.io/kuberay-helm/
-    version: 1.2.1
+    version: 1.1.1
     releaseName: kuberay-operator
-    namespace: kuberay
     includeCRDs: true
     valuesFile: values.yaml
