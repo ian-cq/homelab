@@ -10,7 +10,6 @@ resources:
   - metrics-server.yaml
   - kube-state-metrics.yaml
   - opentelemetry.yaml
-  - httpbin.yaml
   - namespaces.yaml
   - cert-manager.yaml
   - kuberay-operator.yaml
