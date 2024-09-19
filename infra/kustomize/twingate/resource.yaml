@@ -1,0 +1,7 @@
+apiVersion: twingate.com/v1beta
+kind: TwingateResource
+metadata:
+  name: twingate
+spec:
+  name: ipserverone-twingate
+  address: "*.cluster.local"

@@ -1,0 +1,6 @@
+apiVersion: twingate.com/v1beta
+kind: TwingateGroup
+metadata:
+  name: twingate
+spec:
+  name: Default

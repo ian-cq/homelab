@@ -9,7 +9,7 @@ spec:
     namespace: argocd
     server: https://kubernetes.default.svc
   source:
-    path: infra/kustomize/text-summarizer
+    path: infra/helm/text-summarizer
     repoURL: https://github.com/ian-chan-ml/homelab.git
     targetRevision: HEAD
   sources: []
