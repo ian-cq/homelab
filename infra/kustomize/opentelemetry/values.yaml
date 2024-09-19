@@ -11,3 +11,9 @@ manager:
 
   prometheusRule:
     enabled: true
+
+admissionWebhooks:
+  certManager:
+    enabled: false
+  autoGenerateCert:
+    enabled: true
