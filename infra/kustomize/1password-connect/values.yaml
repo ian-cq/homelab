@@ -1,2 +1,6 @@
 connect:
+  create: true
   # credentials: op://quanianitis.com/1password-credentials/1password-credentials.json 
+
+operator:
+  create: false
