@@ -38,8 +38,6 @@ spec:
               static_configs:
                 - targets:
                     - ${POD_IP}:8888
-      exporters:
-      logging:
   
     service:
       pipelines:
