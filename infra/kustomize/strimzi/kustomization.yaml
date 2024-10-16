@@ -3,11 +3,11 @@ kind: Kustomization
 
 namespace: kafka
 
-# helmCharts:
-# - name: strimzi-kafka-operator
-#   repo: oci://quay.io/strimzi-helm
-#   releaseName: strimzi-cluster-operator
-#   includeCRDs: true
+helmCharts:
+- name: strimzi-kafka-operator
+  repo: oci://quay.io/strimzi-helm
+  releaseName: strimzi-cluster-operator
+  includeCRDs: true
 
 resources:
   - kafka.yaml
