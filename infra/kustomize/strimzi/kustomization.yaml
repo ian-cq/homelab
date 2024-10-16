@@ -8,6 +8,7 @@ helmCharts:
   repo: oci://quay.io/strimzi-helm
   releaseName: strimzi-cluster-operator
   includeCRDs: true
+  valuesFile: values.yaml
 
 # resources:
 #   - kafka.yaml
