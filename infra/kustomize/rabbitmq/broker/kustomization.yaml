@@ -5,3 +5,12 @@ namespace: default
 
 resources:
   - https://raw.githubusercontent.com/rabbitmq/cluster-operator/main/docs/examples/hello-world/rabbitmq.yaml
+  
+patches:
+  - patch: |-
+      - op: replace
+        path: /metadata/name
+        value: rabbitmq
+    target:
+      kind: RabbitmqCluster
+      namespace: default
