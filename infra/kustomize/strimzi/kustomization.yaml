@@ -9,8 +9,8 @@ helmCharts:
   releaseName: strimzi-cluster-operator
   includeCRDs: true
 
-resources:
-  - kafka.yaml
+# resources:
+#   - kafka.yaml
   # - https://strimzi.io/examples/latest/kafka/kraft/kafka-single-node.yaml
 
 # patches:
