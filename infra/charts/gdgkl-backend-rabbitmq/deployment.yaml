@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdgkl-backend-rabbitmq
+  labels:
+    app.kubernetes.io/name: gdgkl-backend-rabbitmq
+    quanianitis.com/service-type: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gdgkl-backend-rabbitmq
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gdgkl-backend-rabbitmq
+        quanianitis.com/service-type: gdgkl-backend-rabbitmq
+    spec:
+      containers:
+        - name: gdgkl-backend-rabbitmq
+          image: ghcr.io/ian-cq/gdgkl-backend-rabbitmq:v0.1.0
+          # ports:
+          #   - containerPort: 8080
+          #     name: http
+          #     protocol: TCP
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "25m"
