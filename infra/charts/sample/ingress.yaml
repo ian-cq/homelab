@@ -2,14 +2,17 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: nginx-sample
+  annotations:
+    ingress.cilium.io/loadbalancer-mode: shared
 spec:
   ingressClassName: cilium
   rules:
-  - http:
+  - host: homelab.quanianitis.com
+    http:
       paths:
       - backend:
           service:
-            name: details
+            name: nginx-sample
             port:
               number: 80
         path: /

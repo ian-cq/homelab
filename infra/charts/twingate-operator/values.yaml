@@ -1,0 +1,69 @@
+# Default values for twingate-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Required: you have to specify `network` and
+#  - either `apiKey` or `existingAPIKeySecret`
+#  - either `remoteNetworkId` or `remoteNetworkName`
+twingateOperator:
+  apiKey: "IWZ6_3VO6SVUYEdrki7zUpiYw-XfnzDXFNiep6132yNiqkL0SRfsb59Wf1CwqUhpQL8NiG49r2XVsJFJrQaMLXZx7I1RCRAw_VXT2O9QRPcNExyiWVroN-eNDOup4rjy5X1c2w"
+  network: "work3"
+  remoteNetworkId: "UmVtb3RlTmV0d29yazoxMzM0MDg="
+  remoteNetworkName: "ipserverone"
+
+image:
+  repository: twingate/kubernetes-operator
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Additional annotations to set on the pod
+podAnnotations: {}
+
+# Additional labels to set on the pod
+podLabels: {}
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+priorityClassName: ""

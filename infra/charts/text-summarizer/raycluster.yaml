@@ -1,0 +1,91 @@
+---
+# Source: ray-cluster/templates/raycluster-cluster.yaml
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  labels:
+    helm.sh/chart: ray-cluster-1.1.1
+    app.kubernetes.io/instance: raycluster
+    app.kubernetes.io/managed-by: Helm
+  name: raycluster-kuberay
+  
+spec:
+  headGroupSpec:
+    serviceType: ClusterIP
+    rayStartParams:
+        dashboard-host: "0.0.0.0"
+    template:
+      spec:
+        imagePullSecrets:
+          []
+        containers:
+          - 
+            volumeMounts:
+            - mountPath: /tmp/ray
+              name: log-volume
+            name: ray-head
+            image: rayproject/ray:2.9.0-aarch64
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              {}
+            env:
+        
+        volumes:
+          - emptyDir: {}
+            name: log-volume
+        affinity:
+          {}
+        tolerations:
+          []
+        nodeSelector:
+          {}
+      metadata:
+        annotations:
+          {}
+        labels: 
+          helm.sh/chart: ray-cluster-1.1.1
+          app.kubernetes.io/instance: raycluster
+          app.kubernetes.io/managed-by: Helm 
+
+  workerGroupSpecs:
+  - rayStartParams:
+      {}
+    replicas: 1
+    minReplicas: 1
+    maxReplicas: 3
+    numOfHosts: 1
+    groupName: workergroup
+    template:
+      spec:
+        imagePullSecrets:
+          []
+        containers:
+          - 
+            volumeMounts:
+            - mountPath: /tmp/ray
+              name: log-volume
+            name: ray-worker
+            image: rayproject/ray:2.9.0-aarch64
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              {}
+            env:
+            ports:
+              null
+        
+        volumes:
+          - emptyDir: {}
+            name: log-volume
+        affinity:
+          {}
+        tolerations:
+          []
+        nodeSelector:
+          {}
+      metadata:
+        annotations:
+          {}
+        labels: 
+          helm.sh/chart: ray-cluster-1.1.1
+          app.kubernetes.io/instance: raycluster
+          app.kubernetes.io/managed-by: Helm
