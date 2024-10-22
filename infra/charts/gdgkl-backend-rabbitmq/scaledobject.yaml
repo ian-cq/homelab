@@ -6,6 +6,7 @@ metadata:
 spec:
   pollingInterval: 5
   cooldownPeriod: 15
+  minReplicaCount: 1
   scaleTargetRef:
     kind: Deployment
     name: gdgkl-backend-rabbitmq  # Name of your rabbitmq consumer deployment
