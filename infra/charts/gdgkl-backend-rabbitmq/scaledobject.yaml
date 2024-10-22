@@ -15,4 +15,4 @@ spec:
         host: amqp://default_user_QyIkZ3PQmpN9wVzV6hN:pe8QTaba4XSJXz4ilKWxMCV6qvihBmDf@rabbitmq.default.svc.cluster.local:5672 # Your RabbitMQ connection string (use secret if needed)
         queueName: "orders"           # The queue to monitor
         mode: QueueLength
-        queueLength: "10"               # Scale when more than 10 messages are in the queue
+        value: "10"               # Scale when more than 10 messages are in the queue
