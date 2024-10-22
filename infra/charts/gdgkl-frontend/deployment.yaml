@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: gdgkl-frontend
-          image: ghcr.io/ian-cq/gdgkl-frontend:v0.3.0
+          image: ghcr.io/ian-cq/gdgkl-frontend:v0.3.3
           ports:
             - containerPort: 8080
               name: http
