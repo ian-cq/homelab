@@ -4,6 +4,8 @@ metadata:
   name: gdgkl-backend-kafka
   namespace: default
 spec:
+  pollingInterval: 5
+  cooldownPeriod: 15
   scaleTargetRef:
     kind: Deployment
     name: gdgkl-backend-kafka  # Name of your Kafka consumer deployment
