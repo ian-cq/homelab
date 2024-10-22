@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: gdgkl-backend-kafka
-          image: ghcr.io/ian-cq/gdgkl-backend-kafka:v0.0.1
+          image: ghcr.io/ian-cq/gdgkl-backend-kafka:v0.3.0
           # ports:
           #   - containerPort: 8080
           #     name: http

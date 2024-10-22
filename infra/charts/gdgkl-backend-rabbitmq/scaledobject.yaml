@@ -1,0 +1,16 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: gdgkl-backend-rabbitmq
+  namespace: default
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: gdgkl-backend-rabbitmq  # Name of your rabbitmq consumer deployment
+  triggers:
+    - type: rabbitmq
+      metadata:
+        host: amqp://default_user_QyIkZ3PQmpN9wVzV6hN:pe8QTaba4XSJXz4ilKWxMCV6qvihBmDf@rabbitmq.default.svc.cluster.local:5672 # Your RabbitMQ connection string (use secret if needed)
+        queueName: "orders"           # The queue to monitor
+        mode: QueueLength
+        queueLength: "10"               # Scale when more than 10 messages are in the queue

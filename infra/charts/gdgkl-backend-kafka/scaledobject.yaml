@@ -1,0 +1,17 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: gdgkl-backend-kafka
+  namespace: default
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: gdgkl-backend-kafka  # Name of your Kafka consumer deployment
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka-kafka-bootstrap.default.svc.cluster.local:9092"  # Your Kafka bootstrap server
+        consumerGroup: "gdgkl-backend"         # Kafka consumer group to track
+        topic: "my-kafka-topic"                   # Kafka topic to monitor
+        lagThreshold: "5"                        # Scale when the lag is above this threshold
+        authenticationMode: none # Change this if using a different auth mode
