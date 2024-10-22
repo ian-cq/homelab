@@ -1,26 +1,30 @@
-apiVersion: v1
-kind: Pod
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: gdgkl-backend-kafka
   namespace: default
 spec:
-  containers:
-  - name: kafka-producer-perf
-    image: quay.io/strimzi/kafka:0.43.0-kafka-3.8.0
-    command:
-      - "bin/kafka-producer-perf-test.sh"
-    args:
-      - "--topic"
-      - "campfire"
-      - "--num-records"
-      - "100"
-      - "--record-size"
-      - "128"
-      - "--throughput"
-      - "2"
-      - "--topic"
-      - "campfire"
-      - "--producer-props"
-      - "bootstrap.servers=kafka-kafka-bootstrap.default.svc.cluster.local:9092"
-  restartPolicy: Never
-
+  template:
+    metadata:
+      name: kafka-producer-perf-test
+    spec:
+      containers:
+      - name: kafka-producer-perf
+        image: quay.io/strimzi/kafka:0.43.0-kafka-3.8.0
+        command:
+          - "bin/kafka-producer-perf-test.sh"
+        args:
+          - "--topic"
+          - "campfire"
+          - "--num-records"
+          - "100"
+          - "--record-size"
+          - "128"
+          - "--throughput"
+          - "2"
+          - "--topic"
+          - "campfire"
+          - "--producer-props"
+          - "bootstrap.servers=kafka-kafka-bootstrap.default.svc.cluster.local:9092"
+      restartPolicy: Never
+  backoffLimit: 4
