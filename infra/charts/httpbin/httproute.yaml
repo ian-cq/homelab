@@ -5,20 +5,11 @@ metadata:
 spec:
   hostnames:
     - httpbin.quanianitis.com
-  parentRefs:
-  - name: default
-    namespace: default
   rules:
   - matches:
     - path:
         type: PathPrefix
         value: /httpbin/
-    filters:
-    - type: URLRewrite
-      urlRewrite:
-        path:
-          type: ReplacePrefixMatch
-          replacePrefixMatch: /
     backendRefs:
     - name: httpbin
       port: 80
