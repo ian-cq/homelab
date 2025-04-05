@@ -9,4 +9,8 @@ helmCharts:
     includeCRDs: true
     valuesFile: values.yaml
 
+resources:
+  - cluster-secretstore.yaml
+  - externalsecret.yaml
+
 namespace: external-secrets
