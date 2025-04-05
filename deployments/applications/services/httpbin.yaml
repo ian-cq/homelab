@@ -6,16 +6,14 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: argocd
+    namespace: httpbin
     server: https://kubernetes.default.svc
   source:
-    path: infra/helm/httpbin
+    path: infra/charts/httpbin
     repoURL: https://github.com/ian-chan-ml/homelab.git
     targetRevision: HEAD
-  sources: []
   project: default
   syncPolicy:
-    automated: null
     syncOptions:
       - RespectIgnoreDifferences=true
       - CreateNamespace=true
