@@ -6,7 +6,7 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: argocd
+    namespace: monitoring
     server: https://kubernetes.default.svc
   source:
     path: infra/kustomize/kube-state-metrics

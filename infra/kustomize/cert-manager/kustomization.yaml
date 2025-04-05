@@ -6,7 +6,7 @@ namespace: kube-system
 helmCharts:
   - name: cert-manager
     repo: https://charts.jetstack.io
-    version: v1.15.3
+    version: v1.17.1
     releaseName: cert-manager
     valuesInline:
       crds:

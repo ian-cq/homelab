@@ -4,12 +4,11 @@ kind: Kustomization
 namespace: argocd
 
 resources:
-  - 1password-connect.yaml
-  - cilium.yaml
+  # - 1password-connect.yaml
+  # - cilium.yaml
   - external-secrets.yaml
-  - metrics-server.yaml
   - kube-state-metrics.yaml
-  - opentelemetry.yaml
-  - namespaces.yaml
+  # - opentelemetry.yaml
+  # - namespaces.yaml
   - cert-manager.yaml
-  - kuberay-operator.yaml
+  # - kuberay-operator.yaml

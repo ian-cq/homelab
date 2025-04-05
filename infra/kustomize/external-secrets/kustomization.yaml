@@ -3,7 +3,7 @@ kind: Kustomization
 
 helmCharts:
   - name: external-secrets
-    version: v0.10.3
+    version: v0.15.1
     repo: https://charts.external-secrets.io
     releaseName: external-secrets
     includeCRDs: true
