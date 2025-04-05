@@ -8,4 +8,3 @@ resources:
   - services.yaml
 
 namePrefix: quanianitis.in-cluster.
-nameSuffix: .applications

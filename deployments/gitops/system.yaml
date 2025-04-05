@@ -14,5 +14,10 @@ spec:
     targetRevision: HEAD
     kustomize:
       namePrefix: quanianitis.in-cluster.system.
-  sources: []
   project: default
+  syncPolicy:
+    automated: 
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
