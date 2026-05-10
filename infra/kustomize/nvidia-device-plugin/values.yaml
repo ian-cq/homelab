@@ -1,0 +1,2 @@
+runtimeClassName: nvidia
+deviceListStrategy: volume-mounts

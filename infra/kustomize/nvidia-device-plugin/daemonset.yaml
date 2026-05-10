@@ -20,6 +20,7 @@ spec:
         - key: nvidia.com/gpu
           operator: Exists
           effect: NoSchedule
+      runtimeClassName: nvidia
       priorityClassName: system-node-critical
       containers:
         - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.0

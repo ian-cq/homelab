@@ -1,5 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+helmCharts:
+  - name: nvidia-device-plugin
+    repo: https://nvidia.github.io/k8s-device-plugin
+    version: 0.17.0
+    releaseName: nvidia-device-plugin
+    namespace: kube-system
+    valuesFile: values.yaml
+
 resources:
-  - daemonset.yaml
+  - cuda-test-pod.yaml

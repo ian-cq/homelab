@@ -13,6 +13,15 @@ spec:
     repoURL: https://github.com/ian-cq/homelab.git
     targetRevision: HEAD
   project: default
+  ignoreDifferences:
+    - group: apps
+      kind: DaemonSet
+      jsonPointers:
+        - /status
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /status
   syncPolicy:
     automated:
       prune: true

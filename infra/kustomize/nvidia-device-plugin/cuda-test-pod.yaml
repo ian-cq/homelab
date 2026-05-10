@@ -8,6 +8,7 @@ metadata:
   name: cuda-smi
   namespace: default
 spec:
+  runtimeClassName: nvidia
   restartPolicy: Never
   containers:
     - name: cuda-smi
