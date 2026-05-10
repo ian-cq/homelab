@@ -1,24 +1,18 @@
 fullnameOverride: argocd
+crds:
+  install: true
+  keep: true
 dex:
   enabled: false
 notifications:
   enabled: false
 applicationSet:
-  enabled: true
-repoServer:
-  volumes:
-    - name: custom-tools
-      emptyDir: {}
-    - name: ksops-age
-      secret:
-        secretName: ksops-age
-  volumeMounts:
-    - mountPath: /usr/local/bin/kustomize
-      name: custom-tools
-      subPath: kustomize
+  enabled: false
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+    nodePortHttps: 30443
 configs:
   params:
     server.insecure: true
-  cm:
-    kustomize.buildOptions: --enable-alpha-plugins --enable-helm --enable-exec
-    accounts.argocd-bot: apiKey

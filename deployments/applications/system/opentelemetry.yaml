@@ -10,7 +10,7 @@ spec:
     server: https://kubernetes.default.svc
   source:
     path: infra/kustomize/opentelemetry
-    repoURL: https://github.com/ian-chan-ml/homelab.git
+    repoURL: https://github.com/ian-cq/homelab.git
     targetRevision: HEAD
   sources: []
   project: default

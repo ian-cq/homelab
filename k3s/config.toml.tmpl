@@ -1,0 +1,25 @@
+# containerd config template for k3s with NVIDIA runtime
+# Place at: /var/lib/rancher/k3s/agent/etc/containerd/config.toml.tmpl on the node
+#
+# This is done automatically by the Ansible playbook if you add the
+# extra_server_args or use the template task below. For manual setup:
+#   sudo mkdir -p /var/lib/rancher/k3s/agent/etc/containerd/
+#   sudo cp config.toml.tmpl /var/lib/rancher/k3s/agent/etc/containerd/
+#   sudo systemctl restart k3s
+version = 2
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+  runtime_type = "io.containerd.runc.v2"
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+  SystemdCgroup = true
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia]
+  privileged_without_host_devices = false
+  runtime_engine = ""
+  runtime_root = ""
+  runtime_type = "io.containerd.runc.v2"
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia.options]
+  BinaryName = "/usr/bin/nvidia-container-runtime"
+  SystemdCgroup = true

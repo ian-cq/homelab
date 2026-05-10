@@ -1,21 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: metrics-server
+  name: nvidia-device-plugin
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: argocd
+    namespace: kube-system
     server: https://kubernetes.default.svc
   source:
-    path: infra/kustomize/metrics-server
+    path: infra/kustomize/nvidia-device-plugin
     repoURL: https://github.com/ian-cq/homelab.git
     targetRevision: HEAD
-  sources: []
   project: default
   syncPolicy:
-    automated: null
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - RespectIgnoreDifferences=true
-      - CreateNamespace=true

@@ -1,21 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: metrics-server
+  name: grafana
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: argocd
+    namespace: monitoring
     server: https://kubernetes.default.svc
   source:
-    path: infra/kustomize/metrics-server
+    path: infra/kustomize/grafana
     repoURL: https://github.com/ian-cq/homelab.git
     targetRevision: HEAD
-  sources: []
   project: default
   syncPolicy:
-    automated: null
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
-      - RespectIgnoreDifferences=true
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true

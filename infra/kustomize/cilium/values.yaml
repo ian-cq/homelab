@@ -1,20 +1,16 @@
-nodePort:
-  # -- Enable the Cilium NodePort service implementation.
-  enabled: true
-
 operator:
   replicas: 1
 
-gatewayAPI:
-  enabled: true
+kubeProxyReplacement: true
 
-# bgp:
-#   enabled: true
-#   announce:
-#     loadbalancerIP: true
-#     podCIDR: true
+k8sServiceHost: quanianitis-01
+k8sServicePort: 6443
 
-ingressController:
-  enabled: true
-  default: true
-  loadbalancerMode: dedicated
+ipam:
+  mode: kubernetes
+
+hubble:
+  relay:
+    enabled: false
+  ui:
+    enabled: false

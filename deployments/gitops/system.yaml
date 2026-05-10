@@ -10,7 +10,7 @@ spec:
     server: https://kubernetes.default.svc
   source:
     path: deployments/applications/system
-    repoURL: https://github.com/ian-chan-ml/homelab
+    repoURL: https://github.com/ian-cq/homelab
     targetRevision: HEAD
     kustomize:
       namePrefix: quanianitis.in-cluster.system.

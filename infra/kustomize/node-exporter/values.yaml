@@ -1,0 +1,16 @@
+# Node exporter — expose host-level metrics
+service:
+  port: 9100
+  targetPort: 9100
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9100"
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+hostRootFsMount:
+  enabled: true
+  mountPropagation: HostToContainer

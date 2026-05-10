@@ -11,7 +11,7 @@ spec:
     server: https://kubernetes.default.svc
   source:
     path: infra/kustomize/cilium
-    repoURL: https://github.com/ian-chan-ml/homelab.git
+    repoURL: https://github.com/ian-cq/homelab.git
     targetRevision: HEAD
     kustomize:
       namespace: ''

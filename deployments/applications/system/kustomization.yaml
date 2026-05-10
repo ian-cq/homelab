@@ -4,11 +4,16 @@ kind: Kustomization
 namespace: argocd
 
 resources:
+  - argocd.yaml
+  - cilium.yaml
+  - nvidia-device-plugin.yaml
+  - prometheus.yaml
+  - node-exporter.yaml
+  - grafana.yaml
+  # - external-secrets.yaml
+  # - kube-state-metrics.yaml
+  # - cert-manager.yaml
   # - 1password-connect.yaml
-  # - cilium.yaml
-  - external-secrets.yaml
-  - kube-state-metrics.yaml
   # - opentelemetry.yaml
   # - namespaces.yaml
-  - cert-manager.yaml
   # - kuberay-operator.yaml
