@@ -12,6 +12,11 @@ persistence:
 ingress:
   enabled: false
 
+service:
+  ui:
+    type: NodePort
+    nodePort: 30980
+
 longhornUI:
   replicas: 1
 

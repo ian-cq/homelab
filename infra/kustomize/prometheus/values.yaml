@@ -13,7 +13,8 @@ server:
     size: 10Gi
   retention: "15d"
   service:
-    type: ClusterIP
+    type: NodePort
+    nodePort: 30090
   resources:
     requests:
       cpu: 200m
