@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: argocd
 
 resources:
-  - argocd.yaml
   - cilium.yaml
   - nvidia-device-plugin.yaml
   - prometheus.yaml
