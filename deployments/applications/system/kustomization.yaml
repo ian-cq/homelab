@@ -14,6 +14,6 @@ resources:
   - cert-manager.yaml
   - 1password-connect.yaml
   - namespaces.yaml
-  - twingate.yaml
+  # - twingate.yaml
   # - opentelemetry.yaml
   # - kuberay-operator.yaml
