@@ -1,9 +1,9 @@
 webhook:
-  create: false
+  create: true
 
 certController:
-  create: false
+  create: true
 
 crds:
   conversion:
-    enabled: false
+    enabled: true

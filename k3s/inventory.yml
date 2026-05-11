@@ -24,3 +24,5 @@ k3s_cluster:
     # GPU runtime configured separately via containerd config template
     server_config_yaml: |
       cluster-init: true
+      tls-san:
+          - 100.100.62.1

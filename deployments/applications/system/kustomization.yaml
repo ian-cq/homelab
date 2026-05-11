@@ -10,10 +10,10 @@ resources:
   - prometheus.yaml
   - node-exporter.yaml
   - grafana.yaml
-  # - external-secrets.yaml
-  # - kube-state-metrics.yaml
-  # - cert-manager.yaml
-  # - 1password-connect.yaml
+  - external-secrets.yaml
+  - kube-state-metrics.yaml
+  - cert-manager.yaml
+  - 1password-connect.yaml
+  - namespaces.yaml
   # - opentelemetry.yaml
-  # - namespaces.yaml
   # - kuberay-operator.yaml
