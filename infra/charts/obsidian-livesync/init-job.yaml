@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: couchdb-init
+  labels:
+    app.kubernetes.io/name: obsidian-livesync
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obsidian-livesync
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              COUCHDB_URL="http://couchdb.obsidian-livesync.svc.cluster.local:5984"
+              USERNAME="admin"
+              PASSWORD="admin"
+
+              echo "Waiting for CouchDB to be ready..."
+              until curl -sf "${COUCHDB_URL}/_up" --user "${USERNAME}:${PASSWORD}"; do
+                echo "CouchDB not ready, retrying in 5s..."
+                sleep 5
+              done
+
+              echo ""
+              echo "-- Configuring CouchDB by REST APIs... -->"
+
+              # Enable single node cluster setup
+              curl -sf -X POST "${COUCHDB_URL}/_cluster_setup" \
+                -H "Content-Type: application/json" \
+                -d "{\"action\":\"enable_single_node\",\"username\":\"${USERNAME}\",\"password\":\"${PASSWORD}\",\"bind_address\":\"0.0.0.0\",\"port\":5984,\"singlenode\":true}" \
+                --user "${USERNAME}:${PASSWORD}"
+              echo ""
+
+              echo "<-- Configuring CouchDB by REST APIs Done!"
