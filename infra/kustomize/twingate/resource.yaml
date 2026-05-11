@@ -3,5 +3,5 @@ kind: TwingateResource
 metadata:
   name: twingate
 spec:
-  name: ipserverone-twingate
+  name: 62a-twingate
   address: "*.cluster.local"
