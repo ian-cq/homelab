@@ -11,6 +11,8 @@
     name:
       - policycoreutils  # Used by install script to restore SELinux context
       - open-iscsi        # Required by Longhorn for iSCSI block storage
+      - nfs-kernel-server  # Required by Longhorn for NFS backup target
+      - nfs-common         # NFS client utilities
     update_cache: true
 
 - name: Enable and start iscsid
