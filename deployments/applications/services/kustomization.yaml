@@ -6,4 +6,5 @@ namespace: argocd
 resources:
   - httpbin.yaml
   - obsidian-livesync.yaml
+  - cloudflared.yaml
   # - text-summarizer.yaml
