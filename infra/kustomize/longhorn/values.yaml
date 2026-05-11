@@ -6,7 +6,7 @@ defaultSettings:
   # Disable automatic upgrade checks
   upgradeChecker: false
   # Backup to 500GB HDD
-  backupTarget: nfs://localhost:/backup/longhorn
+  backupTarget: nfs://192.168.1.50:/backup/longhorn
 
 persistence:
   defaultClassReplicaCount: 1
