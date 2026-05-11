@@ -3,6 +3,9 @@ kind: Kustomization
 
 namespace: kube-system
 
+resources:
+  - cert-manager.crds.yaml
+
 helmCharts:
   - name: cert-manager
     repo: https://charts.jetstack.io
