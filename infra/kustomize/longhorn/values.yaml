@@ -1,0 +1,16 @@
+defaultSettings:
+  # Store data on the 2TB HDD mounted at /data
+  defaultDataPath: /data/longhorn
+  # Single node - 1 replica is sufficient
+  defaultReplicaCount: 1
+  # Disable automatic upgrade checks
+  upgradeChecker: false
+
+persistence:
+  defaultClassReplicaCount: 1
+
+ingress:
+  enabled: false
+
+longhornUI:
+  replicas: 1
