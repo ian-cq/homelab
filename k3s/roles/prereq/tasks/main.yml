@@ -5,11 +5,20 @@
       - ansible_version.full is version('2.14', '>=')
     msg: "Minimum ansible-core version required is 2.14"
 
-- name: Install Dependent Ubuntu Packages
-  when: ansible_distribution in ['Ubuntu']
+- name: Install Dependent Packages [Debian/Ubuntu]
+  when: ansible_os_family == 'Debian'
   ansible.builtin.apt:
-    name: policycoreutils  # Used by install script to restore SELinux context
+    name:
+      - policycoreutils  # Used by install script to restore SELinux context
+      - open-iscsi        # Required by Longhorn for iSCSI block storage
     update_cache: true
+
+- name: Enable and start iscsid
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.systemd:
+    name: iscsid
+    enabled: true
+    state: started
 
 - name: Enable IPv4 forwarding
   ansible.posix.sysctl:
