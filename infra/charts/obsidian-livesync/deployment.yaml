@@ -20,6 +20,15 @@ spec:
         runAsUser: 5984
         runAsGroup: 5984
         fsGroup: 5984
+      initContainers:
+        - name: copy-config
+          image: couchdb:latest
+          command: ["sh", "-c", "cp /config-readonly/* /config-writable/"]
+          volumeMounts:
+            - name: config-readonly
+              mountPath: /config-readonly
+            - name: config
+              mountPath: /config-writable
       containers:
         - name: couchdb
           image: couchdb:latest
@@ -60,6 +69,8 @@ spec:
           persistentVolumeClaim:
             claimName: couchdb-data
         - name: config
+          emptyDir: {}
+        - name: config-readonly
           configMap:
             name: couchdb-config
             items:
