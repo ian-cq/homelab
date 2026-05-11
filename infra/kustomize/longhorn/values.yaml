@@ -5,9 +5,12 @@ defaultSettings:
   defaultReplicaCount: 1
   # Disable automatic upgrade checks
   upgradeChecker: false
+  # Backup to 500GB HDD
+  backupTarget: nfs://localhost:/backup/longhorn
 
 persistence:
   defaultClassReplicaCount: 1
+  reclaimPolicy: Retain
 
 ingress:
   enabled: false
