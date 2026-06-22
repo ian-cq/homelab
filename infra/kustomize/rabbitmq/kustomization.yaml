@@ -4,4 +4,4 @@ kind: Kustomization
 namespace: rabbitmq
 
 resources:
-  - https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml
+  - https://github.com/rabbitmq/cluster-operator/releases/download/v2.21.1/cluster-operator.yml

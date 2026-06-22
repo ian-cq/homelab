@@ -5,10 +5,9 @@ kind: Kustomization
 # `monitoring` namespace. No kong gateway, no separate auth pod —
 # the dashboard binary serves both UI and API itself.
 #
-# Sibling files `values.yaml`, `sa.yaml`, `secret.yaml` and
-# `clusterrolebinding.yaml` are leftovers from an earlier (never-applied)
-# chart-based attempt that targeted the `kubernetes-dashboard` namespace.
-# They are intentionally NOT referenced here.
+# The upstream chart-based migration is not viable: the official helm
+# repo https://kubernetes.github.io/dashboard/ is dead (GitHub Pages
+# 404) and kubernetes/dashboard was archived on 2026-01-21.
 
 namespace: monitoring
 
