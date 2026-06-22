@@ -1,2 +1,25 @@
-chartsPath: "infra/kustomize/argocd"
-destNamespace: "argocd"
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  source:
+    path: infra/kustomize/argocd
+    repoURL: https://github.com/ian-cq/homelab.git
+    targetRevision: HEAD
+  project: default
+  # Argo CD self-management.
+  # The kustomize/values.yaml under infra/kustomize/argocd already matches
+  # the live deployment (chart 7.7.16, NodePort 30080/30443, server.insecure=true).
+  # Auto-sync is intentionally OFF — Argo CD touching its own controller
+  # mid-sync would be unrecoverable. Sync is operator-driven.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+      - ServerSideApply=true
