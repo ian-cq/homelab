@@ -47,6 +47,7 @@ infra/kustomize/grafana/charts
 infra/kustomize/prometheus/charts
 infra/kustomize/oauth2-proxy/charts
 infra/kustomize/kubernetes-dashboard/charts
+infra/kustomize/nvidia-device-plugin/charts
 
 # FRP secrets
 *.env
