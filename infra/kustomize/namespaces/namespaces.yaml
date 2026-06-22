@@ -38,3 +38,8 @@ kind: Namespace
 metadata:
   name: oauth
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cilium-system
+---
