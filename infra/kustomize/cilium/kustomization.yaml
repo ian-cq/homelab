@@ -14,6 +14,11 @@ resources:
   # upstream one by URL. Pinned to gateway-api v1.2.1 (matches the standard
   # channel CRDs already installed cluster-wide).
   - https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+  # LB-IPAM pool + L2 announcement for the public Gateway Service. See
+  # values.yaml for the l2announcements helm flag that makes the policy
+  # actually do anything.
+  - lb-pool.yaml
+  - l2-announce.yaml
 
 helmCharts:
   - name: cilium

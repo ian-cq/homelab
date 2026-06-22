@@ -21,3 +21,15 @@ hubble:
 # separate Envoy DaemonSet is deployed.
 gatewayAPI:
   enabled: true
+
+# L2 announcements let cilium-agent ARP-respond on the LAN for LoadBalancer
+# service IPs allocated by LB-IPAM (CiliumLoadBalancerIPPool + match policy
+# live in this kustomization). The k8sClientRateLimit bump follows the
+# upstream guidance: l2announcements uses one Lease per announced service
+# and the default client throttle (5/10) churns quickly with even a few
+# leases.
+l2announcements:
+  enabled: true
+k8sClientRateLimit:
+  qps: 50
+  burst: 100
