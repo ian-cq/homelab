@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth2-proxy
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: oauth
+    server: https://kubernetes.default.svc
+  source:
+    path: infra/kustomize/oauth2-proxy
+    repoURL: https://github.com/ian-cq/homelab.git
+    targetRevision: HEAD
+  project: default
+  # Auto-sync is OFF by design.
+  #
+  # The chart references an `oauth2-proxy-google` Secret (provided manually,
+  # not in git). If Argo syncs before the Secret exists, the four oauth2-proxy
+  # Deployments will CrashLoopBackOff. That alone is harmless — HTTPRoutes
+  # still point at the app Services in phase 1 — but it's noisy and might
+  # mask a later real failure.
+  #
+  # Operator workflow:
+  #   1. Provide the `oauth2-proxy-google` Secret in the `oauth` namespace
+  #      (keys: client-id, client-secret, cookie-secret).
+  #   2. Sync this Application from the Argo UI or `argocd app sync oauth2-proxy`.
+  #   3. Confirm four Deployments reach Ready.
+  #   4. (Phase 2) Rewire each app's HTTPRoute backendRef to the matching
+  #      oauth2-proxy Service in the `oauth` namespace, commit, sync.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

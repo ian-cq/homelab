@@ -1,0 +1,47 @@
+# oauth2-proxy in front of Prometheus UI
+# Phase 1: chart deploys; pods will CrashLoopBackOff until the
+# `oauth2-proxy-google` Secret exists in this namespace.
+# Phase 2: rewire infra/kustomize/prometheus/httproute.yaml backendRef →
+# oauth2-proxy-prometheus.oauth.svc:80
+
+config:
+  existingSecret: oauth2-proxy-google
+  configFile: |-
+    provider = "google"
+    reverse_proxy = true
+    http_address = "0.0.0.0:4180"
+    upstreams = ["http://prometheus-server.monitoring.svc.cluster.local:80"]
+    redirect_url = "https://prometheus.62a.quanianitis.com/oauth2/callback"
+    cookie_domains = [".62a.quanianitis.com"]
+    whitelist_domains = [".62a.quanianitis.com"]
+    cookie_samesite = "lax"
+    cookie_secure = true
+    email_domains = ["*"]
+    pass_authorization_header = true
+    pass_access_token = true
+    pass_user_headers = true
+    set_authorization_header = true
+    set_xauthrequest = true
+    skip_provider_button = true
+
+service:
+  portNumber: 80
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+ingress:
+  enabled: false
+httpRoute:
+  enabled: false
+serviceMonitor:
+  enabled: false
+metrics:
+  enabled: false

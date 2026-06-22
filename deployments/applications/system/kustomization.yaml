@@ -18,6 +18,7 @@ resources:
   - kubernetes-dashboard.yaml
   - argocd.yaml
   - gateway.yaml
+  - oauth2-proxy.yaml
   # - twingate.yaml
   # - opentelemetry.yaml
   # - kuberay-operator.yaml
