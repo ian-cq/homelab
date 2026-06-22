@@ -5,6 +5,17 @@ kind: Kustomization
 # `cilium` GatewayClass itself, so the sibling gatewayclass.yaml is NOT
 # referenced here (kept as documentation / fallback only).
 
+resources:
+  # TLSRoute CRD (experimental channel). The homelab does not author any
+  # TLSRoute objects, but cilium 1.17.x unconditionally registers
+  # `v1alpha2.TLSRouteList` in its client-go scheme; without the CRD,
+  # every Gateway reconcile crashes with
+  #   `no kind is registered for the type v1alpha2.TLSRouteList in scheme`
+  # The cilium helm chart does NOT ship Gateway-API CRDs, so we pin the
+  # upstream one by URL. Pinned to gateway-api v1.2.1 (matches the standard
+  # channel CRDs already installed cluster-wide).
+  - https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+
 helmCharts:
   - name: cilium
     repo: https://helm.cilium.io
