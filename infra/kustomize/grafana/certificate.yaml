@@ -1,0 +1,22 @@
+# Grafana server TLS certificate.
+# Consumed by the grafana Deployment via GF_SERVER_PROTOCOL=https +
+# GF_SERVER_CERT_FILE / GF_SERVER_CERT_KEY (see values.yaml).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-server-tls
+  namespace: monitoring
+spec:
+  secretName: grafana-server-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: grafana.62a.quanianitis.com
+  dnsNames:
+    - grafana.62a.quanianitis.com
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always

@@ -3,6 +3,10 @@ kind: Kustomization
 
 namespace: monitoring
 
+resources:
+  - namespace.yaml
+  - certificate.yaml
+
 helmCharts:
   - name: prometheus
     repo: https://prometheus-community.github.io/helm-charts

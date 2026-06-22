@@ -1,0 +1,62 @@
+# Let's Encrypt ClusterIssuers using a Cloudflare DNS-01 solver.
+#
+# The Cloudflare API token Secret already exists at
+#   kube-system/62a-quanianitis-com-cloudflare-api  (key: token)
+# cert-manager itself runs in the kube-system namespace, so a ClusterIssuer's
+# DNS-01 solver can reference that Secret directly by name.
+#
+# Two issuers are provided:
+#   - letsencrypt-staging:  ACME staging endpoint; use during development to
+#                           avoid hitting the production rate limits.
+#   - letsencrypt-prod:     ACME production endpoint; issues browser-trusted
+#                           certs.
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    email: contact@quanianitis.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      # The Cloudflare-managed zone is quanianitis.com; that's where the
+      # API token can write the ACME TXT records. The selector must name
+      # the actual hosted zone (not the subdomain). Scope to certificate
+      # issuance is enforced at the Certificate resource level — we only
+      # request hostnames under *.62a.quanianitis.com.
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: 62a-quanianitis-com-cloudflare-api
+              key: token
+        selector:
+          dnsZones:
+            - quanianitis.com
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: contact@quanianitis.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      # The Cloudflare-managed zone is quanianitis.com; that's where the
+      # API token can write the ACME TXT records. The selector must name
+      # the actual hosted zone (not the subdomain). Scope to certificate
+      # issuance is enforced at the Certificate resource level — we only
+      # request hostnames under *.62a.quanianitis.com.
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: 62a-quanianitis-com-cloudflare-api
+              key: token
+        selector:
+          dnsZones:
+            - quanianitis.com

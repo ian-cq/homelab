@@ -5,6 +5,7 @@ namespace: kube-system
 
 resources:
   - cert-manager.crds.yaml
+  - clusterissuers.yaml
 
 helmCharts:
   - name: cert-manager

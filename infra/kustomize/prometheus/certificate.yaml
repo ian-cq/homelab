@@ -1,0 +1,22 @@
+# Prometheus server TLS certificate.
+# Consumed by prometheus-server via --web.config.file pointing at a
+# web-config.yml that references the mounted secret (see values.yaml).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-server-tls
+  namespace: monitoring
+spec:
+  secretName: prometheus-server-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: prometheus.62a.quanianitis.com
+  dnsNames:
+    - prometheus.62a.quanianitis.com
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always

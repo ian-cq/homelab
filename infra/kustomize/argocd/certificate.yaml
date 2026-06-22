@@ -1,0 +1,24 @@
+# Argo CD server TLS certificate.
+#
+# `argocd-server` looks for a Secret named `argocd-server-tls` in its own
+# namespace at startup and serves it on the gRPC/HTTPS port automatically.
+# (See https://argo-cd.readthedocs.io/en/stable/operator-manual/tls/.)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-server-tls
+  namespace: argocd
+spec:
+  secretName: argocd-server-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: argocd.62a.quanianitis.com
+  dnsNames:
+    - argocd.62a.quanianitis.com
+  duration: 2160h    # 90d
+  renewBefore: 360h  # 15d
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always

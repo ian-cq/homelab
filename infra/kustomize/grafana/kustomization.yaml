@@ -3,6 +3,9 @@ kind: Kustomization
 
 namespace: monitoring
 
+resources:
+  - certificate.yaml
+
 helmCharts:
   - name: grafana
     repo: https://grafana.github.io/helm-charts

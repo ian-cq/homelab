@@ -41,6 +41,10 @@ infra/kustomize/1password-connect/charts
 infra/kustomize/external-secrets/charts
 infra/kustomize/cilium/charts
 infra/kustomize/opentelemetry/charts
+infra/kustomize/argocd/charts
+infra/kustomize/cert-manager/charts
+infra/kustomize/grafana/charts
+infra/kustomize/prometheus/charts
 
 # FRP secrets
 *.env

@@ -5,6 +5,7 @@ namespace: argocd
 
 resources:
   - namespace.yaml
+  - certificate.yaml
 
 helmCharts:
   - name: argo-cd
