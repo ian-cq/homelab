@@ -59,12 +59,13 @@ customDomains = ["prometheus.62a.quanianitis.com"]
 localIP = "10.43.120.72"
 localPort = 80
 
-# Kubernetes Dashboard (via kong gateway, plain HTTP listener)
+# Kubernetes Dashboard v2.7.0 (single-container, plain HTTP on port 9090,
+# exposed by the Service as port 80; no kong, no separate auth pod).
 [[proxies]]
 name = "dashboard"
 type = "http"
 customDomains = ["dashboard.62a.quanianitis.com"]
-localIP = "10.43.152.72"
+localIP = "10.43.226.191"
 localPort = 80
 
 # TCP: SSH access to homelab

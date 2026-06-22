@@ -15,6 +15,7 @@ resources:
   - 1password-connect.yaml
   - namespaces.yaml
   - longhorn.yaml
+  - kubernetes-dashboard.yaml
   # - twingate.yaml
   # - opentelemetry.yaml
   # - kuberay-operator.yaml

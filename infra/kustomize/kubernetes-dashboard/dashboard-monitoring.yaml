@@ -1,0 +1,273 @@
+# Kubernetes Dashboard (v2.7.0) — single-container, no kong, no auth pod.
+#
+# Adapted from
+# https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+# with the following deltas:
+#   - Namespace = monitoring (the chart-version installer lives here too).
+#   - The dashboard container serves PLAIN HTTP on port 9090 via
+#     `--insecure-bind-address=0.0.0.0 --insecure-port=9090
+#      --enable-insecure-login`. TLS is terminated upstream by Cloudflare
+#     and the FRP control channel is already TLS-wrapped, so plaintext
+#     inside the cluster is acceptable for this homelab.
+#   - The TLS port 8443, the auto-generated cert Secret and the
+#     `--auto-generate-certificates` flag are removed (not needed when we
+#     only serve HTTP).
+#   - Service exposes port 80 -> targetPort 9090 so frpc can dial the
+#     ClusterIP without a port translation.
+#   - `--namespace` flag is set to monitoring so the chart's internal
+#     bookkeeping resources are looked up in the right place.
+#   - admin-user ServiceAccount + cluster-admin binding are kept in
+#     admin-user-monitoring.yaml (sibling file).
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubernetes-dashboard
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubernetes-dashboard
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9090
+      protocol: TCP
+  selector:
+    k8s-app: kubernetes-dashboard
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubernetes-dashboard-csrf
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+type: Opaque
+data:
+  csrf: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubernetes-dashboard-key-holder
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+type: Opaque
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kubernetes-dashboard-settings
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames:
+      - kubernetes-dashboard-key-holder
+      - kubernetes-dashboard-csrf
+    verbs: ["get", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["kubernetes-dashboard-settings"]
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["services"]
+    resourceNames:
+      - heapster
+      - dashboard-metrics-scraper
+    verbs: ["proxy"]
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    resourceNames:
+      - heapster
+      - "http:heapster:"
+      - "https:heapster:"
+      - dashboard-metrics-scraper
+      - "http:dashboard-metrics-scraper"
+    verbs: ["get"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard-monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+rules:
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubernetes-dashboard
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubernetes-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubernetes-dashboard-monitoring
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: monitoring
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: monitoring
+  labels:
+    k8s-app: kubernetes-dashboard
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kubernetes-dashboard
+          image: kubernetesui/dashboard:v2.7.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9090
+              protocol: TCP
+          args:
+            - --namespace=monitoring
+            - --insecure-bind-address=0.0.0.0
+            - --insecure-port=9090
+            - --enable-insecure-login
+            # `--enable-skip-login` would allow anonymous access; intentionally
+            # omitted so the token/kubeconfig login screen is enforced.
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp-volume
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1001
+            runAsGroup: 2001
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      serviceAccountName: kubernetes-dashboard
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dashboard-metrics-scraper
+  namespace: monitoring
+  labels:
+    k8s-app: dashboard-metrics-scraper
+spec:
+  ports:
+    - port: 8000
+      targetPort: 8000
+  selector:
+    k8s-app: dashboard-metrics-scraper
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: dashboard-metrics-scraper
+  name: dashboard-metrics-scraper
+  namespace: monitoring
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: dashboard-metrics-scraper
+  template:
+    metadata:
+      labels:
+        k8s-app: dashboard-metrics-scraper
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: dashboard-metrics-scraper
+          image: kubernetesui/metrics-scraper:v1.0.8
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp-volume
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1001
+            runAsGroup: 2001
+      serviceAccountName: kubernetes-dashboard
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
