@@ -2,17 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Shared Cilium Gateway for all *.62a.quanianitis.com hostnames.
-# TLS is terminated here using cert-manager-issued Let's Encrypt certs
-# whose Secrets live in the apps' own namespaces (argocd, monitoring);
-# cross-namespace Secret refs are permitted via ReferenceGrants in each
-# of those namespaces.
+# TLS is terminated here using a single wildcard Let's Encrypt cert
+# (Certificate + Secret colocated in cilium-system with the Gateway,
+# so no ReferenceGrant is needed for the cert ref).
 #
 # The HTTPRoutes themselves live next to their backing Services
 # (infra/kustomize/<app>/httproute.yaml) so they can backendRef the
 # Service in the same namespace without further grants.
-
-namespace: gateway
+#
+# No `namespace:` override here: gateway.yaml and certificate.yaml each
+# carry an explicit metadata.namespace, and tlsroute-crd.yaml is
+# cluster-scoped.
 
 resources:
   - tlsroute-crd.yaml
   - gateway.yaml
+  - certificate.yaml
