@@ -1,0 +1,42 @@
+# Kubernetes Dashboard — deploy override for homelab (monitoring ns)
+#
+# Applied via raw `helm install` because GitHub Pages chart repo
+# https://kubernetes.github.io/dashboard returns 404 (the project was
+# archived 2026-01-21). Chart tarball is fetched directly from the
+# GitHub release artifact.
+#
+# Install:
+#   curl -sL -o /tmp/kubernetes-dashboard-7.14.0.tgz \
+#     https://github.com/kubernetes/dashboard/releases/download/kubernetes-dashboard-7.14.0/kubernetes-dashboard-7.14.0.tgz
+#   helm install kubernetes-dashboard /tmp/kubernetes-dashboard-7.14.0.tgz \
+#     --namespace monitoring \
+#     -f infra/kustomize/kubernetes-dashboard/values-override.yaml
+#
+# Notes:
+# - Cluster already has metrics-server, no cert-manager, no nginx-ingress.
+# - Ingress is handled out-of-cluster via the FRP tunnel; frpc forwards
+#   dashboard.62a.quanianitis.com to the kong proxy ClusterIP, plain HTTP.
+
+app:
+  ingress:
+    enabled: false
+
+metrics-server:
+  enabled: false
+cert-manager:
+  enabled: false
+nginx:
+  enabled: false
+
+kong:
+  enabled: true
+  proxy:
+    type: ClusterIP
+    http:
+      enabled: true
+      servicePort: 80
+      containerPort: 8000
+    tls:
+      enabled: true
+      servicePort: 443
+      containerPort: 8443

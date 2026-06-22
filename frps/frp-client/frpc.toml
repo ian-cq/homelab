@@ -20,23 +20,52 @@ log.level = "info"
 log.maxDays = 7
 
 # --- Proxies ---
-
-# HTTP wildcard: all *.62a.quanianitis.com traffic → Cilium Gateway
-# (Gateway API HTTPRoutes select on Host header and route to k8s Services)
 #
-# INTERIM: Cilium Gateway API is enabled in cilium-config but no
-# GatewayClass / Gateway / LB-IPAM is provisioned yet, so there is no
-# Host-aware ingress on the cluster. Pointing directly at argocd-server
-# (NodePort 30080, server.insecure=true) so argocd.62a.quanianitis.com
-# reaches argocd end-to-end. Side effect: every *.62a host currently
-# resolves to argocd. Replace with the Cilium Gateway Service IP once
-# `kubectl get gateway -A` returns a real Gateway resource.
+# Per-Host HTTP proxies on the FRP server's vhostHTTPPort (80).
+# Each proxy registers a customDomain so the frps virtual-host router can
+# pick the correct backend Service based on the Host header forwarded by
+# Cloudflare.
+#
+# Backends are addressed via Service ClusterIPs. Cilium runs with
+# kube-proxy-replacement=true and the ClusterIP CIDR (10.43.0.0/16) is
+# reachable from the host network namespace, so frpc on the node can dial
+# them directly without NodePorts.
+#
+# End-state plan: replace these N proxies with a single proxy pointing at a
+# Cilium Gateway Service IP once GatewayClass + Gateway + HTTPRoutes are
+# provisioned. See ~/Documents/docs/frp-tunnel.md.
+
+# Argo CD (argocd-server, server.insecure=true)
 [[proxies]]
-name = "web"
+name = "argocd"
 type = "http"
-customDomains = ["*.62a.quanianitis.com"]
-localIP = "127.0.0.1"
-localPort = 30080
+customDomains = ["argocd.62a.quanianitis.com"]
+localIP = "10.43.12.44"
+localPort = 80
+
+# Grafana
+[[proxies]]
+name = "grafana"
+type = "http"
+customDomains = ["grafana.62a.quanianitis.com"]
+localIP = "10.43.144.146"
+localPort = 80
+
+# Prometheus
+[[proxies]]
+name = "prometheus"
+type = "http"
+customDomains = ["prometheus.62a.quanianitis.com"]
+localIP = "10.43.120.72"
+localPort = 80
+
+# Kubernetes Dashboard (via kong gateway, plain HTTP listener)
+[[proxies]]
+name = "dashboard"
+type = "http"
+customDomains = ["dashboard.62a.quanianitis.com"]
+localIP = "10.43.152.72"
+localPort = 80
 
 # TCP: SSH access to homelab
 [[proxies]]
