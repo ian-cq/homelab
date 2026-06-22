@@ -1,7 +1,10 @@
 # frpc — FRP client configuration
 # Docs: https://github.com/fatedier/frp/blob/dev/doc/client_configures.md
 
-serverAddr = "62a.quanianitis.com"
+# Using the VPS IP directly. The DNS name 62a.quanianitis.com currently
+# resolves to a different (IPv6) address; swap back to the hostname once
+# the A record points at this IP.
+serverAddr = "103.40.207.125"
 serverPort = 7000
 
 # Authentication — token loaded from environment via systemd EnvironmentFile
@@ -20,11 +23,16 @@ log.maxDays = 7
 
 # HTTP wildcard: all *.62a.quanianitis.com traffic → kgateway
 # kgateway routes via Host header to the correct k8s HTTPRoute/Service
+#
+# NOTE: no Cilium Gateway / kgateway is installed yet. localIP points at
+# loopback so the proxy registers successfully; HTTP requests will fail
+# until a backend binds 127.0.0.1:80 (replace with the kgateway ClusterIP
+# once it exists).
 [[proxies]]
 name = "web"
 type = "http"
 customDomains = ["*.62a.quanianitis.com"]
-localIP = "KGATEWAY_IP"
+localIP = "127.0.0.1"
 localPort = 80
 
 # TCP: SSH access to homelab
@@ -32,5 +40,5 @@ localPort = 80
 name = "ssh"
 type = "tcp"
 remotePort = 2222
-localIP = "KGATEWAY_IP"
+localIP = "127.0.0.1"
 localPort = 22
