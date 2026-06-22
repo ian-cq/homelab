@@ -36,17 +36,35 @@ still point at the app Services directly, not at oauth2-proxy.
 
 ## Two-phase rollout
 
-This kustomize is **phase 1**: deploy the chart, the namespace, and the
-ReferenceGrant. HTTPRoutes are *not* rewired yet, so traffic still flows
-unauthenticated to the apps.
+This kustomize is **phase 1**: deploy the chart and the namespace. The
+four oauth2-proxy Deployments will land in the `oauth` namespace once
+the `oauth2-proxy-google` Secret exists. HTTPRoutes are *not* rewired
+yet, so traffic still flows unauthenticated to the apps.
 
-**Phase 2** (after the Secret is in place and the four pods are Running):
-update each app's `httproute.yaml` so `backendRefs[0]` points at
-`oauth2-proxy-<app>.oauth.svc:80` instead of the app Service. That single
-change cuts traffic through Google OAuth.
+**Phase 2 needs a redesign.** The original plan rewired each app's
+HTTPRoute `backendRefs[0]` to `oauth2-proxy-<app>.oauth.svc:80` and
+relied on a `ReferenceGrant` in the `oauth` namespace to permit those
+cross-namespace backend refs. That ReferenceGrant has been removed:
+the homelab does not use ReferenceGrants anywhere (TLS uses a
+colocated wildcard cert, HTTPRoute backends are same-namespace).
 
-The phase-2 commit is intentionally separate so the Secret can be staged
-and pods verified before any user-facing traffic is affected.
+Two viable phase-2 designs without ReferenceGrants:
+
+1. **Colocate proxies per app namespace.** Move each oauth2-proxy
+   release into the consuming namespace (argocd, monitoring,
+   monitoring, monitoring) and drop the `oauth` namespace. HTTPRoute
+   backendRefs become local. Cleanest, costs three extra Deployments
+   in `monitoring` and one in `argocd`.
+
+2. **Move the HTTPRoutes into `oauth`.** Each HTTPRoute lives in
+   `oauth` next to its proxy; the proxy then forwards to the app
+   Service in argocd/monitoring (proxy → Service is plain HTTP from a
+   pod and doesn't need a ReferenceGrant). Add `oauth` to the
+   Gateway's `allowedRoutes` selector. Trades route-near-service
+   locality for fewer Deployments.
+
+The phase-2 commit is intentionally deferred until that decision is
+made and the `oauth2-proxy-google` Secret is staged.
 
 ## Google OAuth client setup
 

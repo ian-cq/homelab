@@ -6,8 +6,7 @@ metadata:
 spec:
   parentRefs:
     - name: public
-      namespace: gateway
-      sectionName: kubernetes-https
+      namespace: cilium-system
   hostnames:
     - kubernetes.62a.quanianitis.com
   rules:

@@ -26,11 +26,6 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: gateway
----
-apiVersion: v1
-kind: Namespace
-metadata:
   name: oauth
 ---
 apiVersion: v1

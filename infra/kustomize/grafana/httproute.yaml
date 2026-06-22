@@ -6,8 +6,7 @@ metadata:
 spec:
   parentRefs:
     - name: public
-      namespace: gateway
-      sectionName: grafana-https
+      namespace: cilium-system
   hostnames:
     - grafana.62a.quanianitis.com
   rules:

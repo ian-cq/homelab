@@ -3,8 +3,12 @@ kind: Kustomization
 
 namespace: oauth
 
-resources:
-  - reference-grant.yaml
+# Phase 2 rewire to colocate oauth2-proxy with each app's HTTPRoute
+# is intentionally deferred. The previous ReferenceGrant-based
+# cross-namespace design (HTTPRoutes in argocd/monitoring backendRef
+# Services in oauth) has been removed because the homelab does not
+# use ReferenceGrants; phase 2 needs a redesign (e.g. one oauth2-proxy
+# Deployment per consuming namespace).
 
 helmCharts:
   - name: oauth2-proxy
