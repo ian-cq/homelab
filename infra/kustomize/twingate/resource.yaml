@@ -1,7 +1,0 @@
-apiVersion: twingate.com/v1beta
-kind: TwingateResource
-metadata:
-  name: twingate
-spec:
-  name: 62a-twingate
-  address: "*.cluster.local"
