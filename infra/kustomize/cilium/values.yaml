@@ -14,3 +14,10 @@ hubble:
     enabled: false
   ui:
     enabled: false
+
+# Cilium Gateway API controller. Requires kubeProxyReplacement=true (set above)
+# and the standard-channel Gateway API CRDs (already installed cluster-wide).
+# Cilium runs Envoy embedded in cilium-agent for the Gateway listeners; no
+# separate Envoy DaemonSet is deployed.
+gatewayAPI:
+  enabled: true
