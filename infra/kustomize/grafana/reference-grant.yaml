@@ -1,0 +1,20 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-to-monitoring-certs
+  namespace: monitoring
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: gateway
+  to:
+    - group: ""
+      kind: Secret
+      name: grafana-server-tls
+    - group: ""
+      kind: Secret
+      name: prometheus-server-tls
+    - group: ""
+      kind: Secret
+      name: kubernetes-dashboard-tls

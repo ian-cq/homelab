@@ -28,3 +28,8 @@ kind: Namespace
 metadata:
   name: mlops
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gateway
+---

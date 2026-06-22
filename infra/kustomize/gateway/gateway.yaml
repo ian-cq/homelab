@@ -1,0 +1,76 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: public
+  namespace: gateway
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: argocd-https
+      protocol: HTTPS
+      port: 443
+      hostname: argocd.62a.quanianitis.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            namespace: argocd
+            name: argocd-server-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: argocd
+    - name: grafana-https
+      protocol: HTTPS
+      port: 443
+      hostname: grafana.62a.quanianitis.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            namespace: monitoring
+            name: grafana-server-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+    - name: prometheus-https
+      protocol: HTTPS
+      port: 443
+      hostname: prometheus.62a.quanianitis.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            namespace: monitoring
+            name: prometheus-server-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+    - name: kubernetes-https
+      protocol: HTTPS
+      port: 443
+      hostname: kubernetes.62a.quanianitis.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            namespace: monitoring
+            name: kubernetes-dashboard-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring

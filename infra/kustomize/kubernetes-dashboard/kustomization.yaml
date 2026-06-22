@@ -16,3 +16,4 @@ resources:
   - dashboard-monitoring.yaml
   - admin-user-monitoring.yaml
   - certificate.yaml
+  - httproute.yaml

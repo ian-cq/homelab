@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway
+      sectionName: grafana-https
+  hostnames:
+    - grafana.62a.quanianitis.com
+  rules:
+    - backendRefs:
+        - name: grafana
+          port: 80

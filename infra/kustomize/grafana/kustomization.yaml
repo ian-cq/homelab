@@ -5,6 +5,8 @@ namespace: monitoring
 
 resources:
   - certificate.yaml
+  - httproute.yaml
+  - reference-grant.yaml
 
 helmCharts:
   - name: grafana

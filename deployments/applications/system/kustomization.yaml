@@ -17,6 +17,7 @@ resources:
   - longhorn.yaml
   - kubernetes-dashboard.yaml
   - argocd.yaml
+  - gateway.yaml
   # - twingate.yaml
   # - opentelemetry.yaml
   # - kuberay-operator.yaml
