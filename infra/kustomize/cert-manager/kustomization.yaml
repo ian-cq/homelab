@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: kube-system
 
 resources:
-  - cert-manager.crds.yaml
   - clusterissuers.yaml
 
 helmCharts:
@@ -17,3 +16,9 @@ helmCharts:
     # annotation; without this, cainjector looks for the CA secret in the wrong
     # namespace and the webhook caBundle stays empty → x509 unknown authority.
     namespace: kube-system
+    # Render CRDs from the chart instead of bundling a separate
+    # cert-manager.crds.yaml in git. `crds.keep: true` (chart default) prevents
+    # accidental deletion of CRDs if the release is uninstalled.
+    valuesInline:
+      crds:
+        enabled: true

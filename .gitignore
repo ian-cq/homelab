@@ -45,6 +45,8 @@ infra/kustomize/argocd/charts
 infra/kustomize/cert-manager/charts
 infra/kustomize/grafana/charts
 infra/kustomize/prometheus/charts
+infra/kustomize/oauth2-proxy/charts
+infra/kustomize/kubernetes-dashboard/charts
 
 # FRP secrets
 *.env
