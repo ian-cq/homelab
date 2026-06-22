@@ -393,6 +393,56 @@ The repo ships a `k3s/Vagrantfile` that can spin up a 5-node cluster locally (li
 
 ---
 
+## Phase 10 — FRP Tunnel (Cloud VPS → Homelab)
+
+Expose homelab k8s services to the internet via a dedicated cloud VPS running FRP (Fast Reverse Proxy). This complements the existing cloudflared tunnel by supporting arbitrary TCP/UDP services (SSH, databases, game servers) in addition to HTTP.
+
+### Architecture
+
+```
+Internet → Cloudflare DNS (*.62a.quanianitis.com) → Cloud VPS :80 → frps vhost
+                                                    Cloud VPS :7000 → frps bind (frpc connects here)
+                                                    Cloud VPS :2222 → frps TCP proxy
+                                                          ↕ frp tunnel (TLS)
+                                                    Homelab: frpc → kgateway → k8s services
+```
+
+### Cloud VPS (frp-server)
+
+- **Instance**: 1GB RAM, 1 core CPU
+- **Domain**: `62a.quanianitis.com`
+- **Components**: frps systemd service only (no Docker, no nginx)
+- **Config location**: `frps/frp-server/`
+- **Deploy**: `cd frps/frp-server && make install`
+- **Ports**: 80 (HTTP vhost), 7000 (frp bind), 2222 (SSH passthrough), 22 (admin SSH)
+
+### Homelab (frp-client)
+
+- **Components**: frpc systemd service on the homelab host (not inside k8s)
+- **Secret**: Auth token pulled from 1Password (`op://Homelab/frp-auth-token/credential`)
+- **Config location**: `frps/frp-client/`
+- **Deploy**: `cd frps/frp-client && make install`
+- **Routing**: All HTTP traffic → kgateway (Cilium Gateway API) on port 80; kgateway handles HTTPRoute matching
+
+### Adding Services
+
+- **HTTP**: Add an HTTPRoute in k8s + Cloudflare DNS record. No FRP config change needed.
+- **TCP**: Add `[[proxies]]` block to `frpc.toml`, add port to `frps.toml` `allowPorts`, open UFW port.
+
+### FRP vs cloudflared
+
+| Feature | cloudflared | FRP |
+|---------|-------------|-----|
+| HTTP/WebSocket | Yes | Yes |
+| Arbitrary TCP/UDP | No | Yes |
+| Cloudflare proxy (DDoS, WAF) | Yes | No (DNS-only) |
+| Vendor lock-in | Cloudflare | None |
+| Requires VPS | No | Yes |
+
+Both coexist. Use cloudflared for services that benefit from Cloudflare's proxy (caching, WAF). Use FRP for TCP services and vendor-independent HTTP access.
+
+---
+
 ## Execution Order
 1. Backup Windows + shrink C: to ~300GB + BIOS prep (disable Secure Boot)
 2. Debian install on NVMe (reuse ESP, ~180GB root + 16GB swap)
@@ -406,6 +456,9 @@ The repo ships a `k3s/Vagrantfile` that can spin up a 5-node cluster locally (li
 10. Apply NVIDIA device plugin manifest from `infra/kustomize/`
 11. Smoke test: CUDA pod requesting `nvidia.com/gpu: 1`
 12. Begin populating `deployments/applications/` with first workloads
+13. Provision cloud VPS, deploy frp-server (`frps/frp-server/`)
+14. Deploy frp-client on homelab host (`frps/frp-client/`), configure kgateway IP
+15. Add Cloudflare DNS records for `*.62a.quanianitis.com` → VPS IP
 
 ---
 
@@ -424,6 +477,8 @@ The repo ships a `k3s/Vagrantfile` that can spin up a 5-node cluster locally (li
 - k3s: defaults (Traefik, servicelb, local-path)
 - GPU plugin manifest lives under `infra/kustomize/`
 - App workloads live under `deployments/applications/` (GitOps stub under `deployments/gitops/`)
+- FRP tunnel: cloud VPS (`62a.quanianitis.com`) + homelab frpc → kgateway; auth token in 1Password
+- FRP version: v0.69.1
 
 ---
 

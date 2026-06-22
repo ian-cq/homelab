@@ -1,0 +1,31 @@
+# frps — FRP server configuration
+# Docs: https://github.com/fatedier/frp/blob/dev/doc/server_configures.md
+
+bindAddr = "0.0.0.0"
+bindPort = 7000
+
+# HTTP virtual host — Cloudflare DNS-only (or Flexible) points here
+vhostHTTPPort = 80
+
+# Authentication
+auth.method = "token"
+auth.token = "CHANGE_ME"
+
+# Dashboard — localhost only, access via SSH tunnel
+webServer.addr = "127.0.0.1"
+webServer.port = 7500
+webServer.user = "admin"
+webServer.password = "CHANGE_ME"
+
+# TLS between frpc <-> frps control channel
+transport.tls.force = true
+
+# Allowed TCP proxy ports (whitelist only what you need)
+allowPorts = [
+  { start = 2222, end = 2222 },
+]
+
+# Logging
+log.to = "console"
+log.level = "info"
+log.maxDays = 7

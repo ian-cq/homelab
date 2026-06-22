@@ -1,0 +1,36 @@
+# frpc — FRP client configuration
+# Docs: https://github.com/fatedier/frp/blob/dev/doc/client_configures.md
+
+serverAddr = "62a.quanianitis.com"
+serverPort = 7000
+
+# Authentication — token loaded from environment via systemd EnvironmentFile
+auth.method = "token"
+auth.token = "{{ .Envs.FRP_AUTH_TOKEN }}"
+
+# TLS for control channel
+transport.tls.enable = true
+
+# Logging
+log.to = "console"
+log.level = "info"
+log.maxDays = 7
+
+# --- Proxies ---
+
+# HTTP wildcard: all *.62a.quanianitis.com traffic → kgateway
+# kgateway routes via Host header to the correct k8s HTTPRoute/Service
+[[proxies]]
+name = "web"
+type = "http"
+customDomains = ["*.62a.quanianitis.com"]
+localIP = "KGATEWAY_IP"
+localPort = 80
+
+# TCP: SSH access to homelab
+[[proxies]]
+name = "ssh"
+type = "tcp"
+remotePort = 2222
+localIP = "KGATEWAY_IP"
+localPort = 22

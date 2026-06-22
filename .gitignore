@@ -41,3 +41,8 @@ infra/kustomize/1password-connect/charts
 infra/kustomize/external-secrets/charts
 infra/kustomize/cilium/charts
 infra/kustomize/opentelemetry/charts
+
+# FRP secrets
+*.env
+frps/frp-server/frps.toml.local
+frps/frp-client/frpc.toml.local

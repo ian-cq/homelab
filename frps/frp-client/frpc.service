@@ -1,0 +1,25 @@
+[Unit]
+Description=FRP Client (frpc)
+Documentation=https://github.com/fatedier/frp
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=frp
+Group=frp
+EnvironmentFile=/etc/frp/frpc.env
+ExecStart=/usr/local/bin/frpc -c /etc/frp/frpc.toml
+Restart=always
+RestartSec=5
+LimitNOFILE=1048576
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/etc/frp
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
