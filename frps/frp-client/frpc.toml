@@ -21,52 +21,29 @@ log.maxDays = 7
 
 # --- Proxies ---
 #
-# Per-Host HTTP proxies on the FRP server's vhostHTTPPort (80).
-# Each proxy registers a customDomain so the frps virtual-host router can
-# pick the correct backend Service based on the Host header forwarded by
-# Cloudflare.
+# Single TCP passthrough proxy: VPS :443 → Cilium Gateway ClusterIP :443.
+# TLS terminates inside the cluster on the Gateway listener using
+# cert-manager Let's Encrypt certs. frps just tunnels bytes; it does NOT
+# need vhostHTTPSPort. SNI-based hostname routing happens inside the
+# Gateway listeners.
 #
-# Backends are addressed via Service ClusterIPs. Cilium runs with
-# kube-proxy-replacement=true and the ClusterIP CIDR (10.43.0.0/16) is
-# reachable from the host network namespace, so frpc on the node can dial
-# them directly without NodePorts.
-#
-# End-state plan: replace these N proxies with a single proxy pointing at a
-# Cilium Gateway Service IP once GatewayClass + Gateway + HTTPRoutes are
-# provisioned. See ~/Documents/docs/frp-tunnel.md.
+# The Gateway Service is type=LoadBalancer but k3s is started with
+# --disable=servicelb so it stays at <pending> external IP. ClusterIP is
+# reachable from the node host network thanks to Cilium socket-LB.
 
-# Argo CD (argocd-server, server.insecure=true)
 [[proxies]]
-name = "argocd"
-type = "http"
-customDomains = ["argocd.62a.quanianitis.com"]
-localIP = "10.43.12.44"
-localPort = 80
-
-# Grafana
-[[proxies]]
-name = "grafana"
-type = "http"
-customDomains = ["grafana.62a.quanianitis.com"]
-localIP = "10.43.144.146"
-localPort = 80
-
-# Prometheus
-[[proxies]]
-name = "prometheus"
-type = "http"
-customDomains = ["prometheus.62a.quanianitis.com"]
-localIP = "10.43.120.72"
-localPort = 80
-
-# Kubernetes Dashboard v2.7.0 (single-container, plain HTTP on port 9090,
-# exposed by the Service as port 80; no kong, no separate auth pod).
-[[proxies]]
-name = "dashboard"
-type = "http"
-customDomains = ["dashboard.62a.quanianitis.com"]
-localIP = "10.43.226.191"
-localPort = 80
+name = "gateway-https"
+type = "tcp"
+remotePort = 443
+# Cilium Gateway 'public' in the gateway namespace.
+# Service: gateway/cilium-gateway-public (ClusterIP, port 443).
+# NOTE: ClusterIP is stable unless the Service object is deleted, but
+# the host network can't easily resolve cluster.local DNS, so we hard-
+# code the IP. If the Gateway Service is ever recreated, refresh this
+# value with:
+#   kubectl -n gateway get svc cilium-gateway-public -o jsonpath='{.spec.clusterIP}'
+localIP = "10.43.35.109"
+localPort = 443
 
 # TCP: SSH access to homelab
 [[proxies]]
