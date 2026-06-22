@@ -24,18 +24,19 @@ log.maxDays = 7
 # HTTP wildcard: all *.62a.quanianitis.com traffic → Cilium Gateway
 # (Gateway API HTTPRoutes select on Host header and route to k8s Services)
 #
-# NOTE: Cilium Gateway API is enabled in cilium-config (enable-gateway-api=true)
-# and the Gateway API CRDs are installed, but no GatewayClass / Gateway
-# resource exists yet. localIP points at loopback so the proxy registers
-# successfully; HTTP requests will fail until a backend binds 127.0.0.1:80
-# (replace with the Cilium-managed Gateway Service IP once the Gateway is
-# created — `kubectl get svc -l gateway.networking.k8s.io/gateway-name=<name>`).
+# INTERIM: Cilium Gateway API is enabled in cilium-config but no
+# GatewayClass / Gateway / LB-IPAM is provisioned yet, so there is no
+# Host-aware ingress on the cluster. Pointing directly at argocd-server
+# (NodePort 30080, server.insecure=true) so argocd.62a.quanianitis.com
+# reaches argocd end-to-end. Side effect: every *.62a host currently
+# resolves to argocd. Replace with the Cilium Gateway Service IP once
+# `kubectl get gateway -A` returns a real Gateway resource.
 [[proxies]]
 name = "web"
 type = "http"
 customDomains = ["*.62a.quanianitis.com"]
 localIP = "127.0.0.1"
-localPort = 80
+localPort = 30080
 
 # TCP: SSH access to homelab
 [[proxies]]
