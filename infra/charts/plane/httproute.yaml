@@ -22,7 +22,7 @@ metadata:
 spec:
   parentRefs:
     - name: public
-      namespace: cilium-system
+      namespace: gateway
   hostnames:
     - mgmt.62a.quanianitis.com
   rules:

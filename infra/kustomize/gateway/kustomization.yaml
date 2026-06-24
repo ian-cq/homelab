@@ -1,24 +1,24 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Shared Cilium Gateway for all *.62a.quanianitis.com hostnames.
+# Shared public Gateway for all *.62a.quanianitis.com hostnames.
+# Served by Envoy Gateway (see deployments/applications/system/
+# envoy-gateway.yaml), which provisions a per-Gateway Envoy
+# Deployment+Service in this same `gateway` namespace.
 #
 # Architecture:
 #   - One wildcard TLS listener (*.62a.quanianitis.com) on port 443.
-#   - Wildcard Certificate + Secret live in cilium-system next to the
+#   - Wildcard Certificate + Secret live in `gateway` next to the
 #     Gateway, so no ReferenceGrant is needed for the TLS cert ref.
 #   - HTTPRoutes live next to their backing Services in app namespaces
-#     (argocd, monitoring). They parentRef this Gateway across
+#     (argocd, monitoring, plane). They parentRef this Gateway across
 #     namespaces (ParentRef cross-ns is governed by the Gateway's
 #     allowedRoutes selector, NOT by ReferenceGrant). BackendRefs are
 #     same-ns, so no ReferenceGrant is needed for routes either.
-#   - The set of Route-source namespaces is pinned by the listener's
-#     allowedRoutes selector (argocd, monitoring); add to gateway.yaml
-#     when introducing a new public app namespace.
-#
-# All resources here are namespaced into cilium-system.
+#   - `allowedRoutes.from: All` lets any namespace attach without
+#     pinning the list here.
 
-namespace: cilium-system
+namespace: gateway
 
 resources:
   - certificate.yaml

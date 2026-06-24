@@ -3,13 +3,13 @@
 # Issued by the letsencrypt-prod ClusterIssuer (DNS-01 via Cloudflare
 # API token in kube-system/62a-quanianitis-com-cloudflare-api).
 #
-# Lives in cilium-system so the Gateway in this namespace can reference
+# Lives in `gateway` next to the Gateway so the Gateway can reference
 # the resulting Secret without a ReferenceGrant.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: wildcard-62a-quanianitis-com
-  namespace: cilium-system
+  namespace: gateway
 spec:
   secretName: wildcard-62a-quanianitis-com-tls
   issuerRef:

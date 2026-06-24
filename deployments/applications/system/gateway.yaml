@@ -6,7 +6,7 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: cilium-system
+    namespace: gateway
     server: https://kubernetes.default.svc
   source:
     path: infra/kustomize/gateway
