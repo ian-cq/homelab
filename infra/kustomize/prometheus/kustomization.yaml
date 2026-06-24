@@ -12,7 +12,6 @@ resources:
   # applied yet.
   - certificate.yaml
   - httproute.yaml
-  - securitypolicy.yaml
 
 helmCharts:
   - name: prometheus

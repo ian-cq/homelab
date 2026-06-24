@@ -1,0 +1,60 @@
+# Envoy Gateway SecurityPolicy: Google OIDC for the entire public Gateway.
+#
+# Why one policy instead of per-HTTPRoute:
+#   SecurityPolicy.targetRefs is namespace-local (LocalPolicyTarget-
+#   ReferenceWithSectionName), so a SecurityPolicy targeting HTTPRoutes
+#   would have to live in each route's namespace (argocd, monitoring,
+#   plane, ...). Targeting the Gateway resource (which is itself in
+#   the `gateway` namespace) applies the OIDC filter to every listener
+#   on the Gateway, transparently covering every HTTPRoute attached to
+#   it -- current and future. One policy, one Secret, no per-namespace
+#   plumbing.
+#
+# Hosts covered today (all parented to gateway/public):
+#   - argocd.62a.quanianitis.com
+#   - grafana.62a.quanianitis.com
+#   - prometheus.62a.quanianitis.com
+#   - kubernetes.62a.quanianitis.com
+#   - mgmt.62a.quanianitis.com         (once plane is bootstrapped)
+#
+# Per-host callbacks: redirectURL is intentionally NOT set so Envoy
+# uses its default template
+#   %REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback
+# which means each host gets its own callback (e.g.
+# https://grafana.62a.quanianitis.com/oauth2/callback). Every
+# protected hostname must therefore be registered in the Google OAuth
+# 2.0 Client's Authorized redirect URIs list before users on that host
+# can complete login. As of writing only prometheus's callback is
+# registered; Ian needs to add the rest before flipping this on for
+# argocd / grafana / kubernetes / mgmt.
+#
+# Secret: `google-oauth-client` in this namespace. Created out-of-band
+# (kubectl apply, NOT in git) so the client_secret never lands in the
+# repo. Keys: `client-id`, `client-secret`. To re-create after a
+# disaster, copy from `monitoring/google-oauth-client` or rebuild from
+# the Google Cloud Console download.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: public-oidc
+  namespace: gateway
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      # No sectionName: apply to all listeners (we currently have one,
+      # the wildcard HTTPS listener, but this keeps the policy general).
+  oidc:
+    provider:
+      issuer: https://accounts.google.com
+    clientIDRef:
+      name: google-oauth-client
+    clientSecret:
+      name: google-oauth-client
+    # redirectURL omitted on purpose -- see header comment.
+    logoutPath: /logout
+    scopes:
+      - openid
+      - email
+      - profile

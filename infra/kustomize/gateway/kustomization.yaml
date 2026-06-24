@@ -24,3 +24,4 @@ resources:
   - certificate.yaml
   - gateway.yaml
   - gatewayclass.yaml
+  - securitypolicy.yaml
