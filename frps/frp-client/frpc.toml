@@ -35,13 +35,15 @@ log.maxDays = 7
 name = "gateway-https"
 type = "tcp"
 remotePort = 443
-# Cilium Gateway 'public' in the gateway namespace.
-# Service: gateway/cilium-gateway-public (ClusterIP, port 443).
+# Cilium Gateway 'public' in the cilium-system namespace.
+# Service: cilium-system/cilium-gateway-public (ClusterIP, port 443).
+# (Migrated from the 'gateway' namespace; helm release now lives in
+# cilium-system alongside the agent.)
 # NOTE: ClusterIP is stable unless the Service object is deleted, but
 # the host network can't easily resolve cluster.local DNS, so we hard-
 # code the IP. If the Gateway Service is ever recreated, refresh this
 # value with:
-#   kubectl -n gateway get svc cilium-gateway-public -o jsonpath='{.spec.clusterIP}'
+#   kubectl -n cilium-system get svc cilium-gateway-public -o jsonpath='{.spec.clusterIP}'
 localIP = "10.43.35.109"
 localPort = 443
 
