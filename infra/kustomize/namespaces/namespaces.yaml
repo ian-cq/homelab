@@ -38,3 +38,8 @@ kind: Namespace
 metadata:
   name: plane
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gateway
+---

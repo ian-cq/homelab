@@ -6,7 +6,7 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: envoy-gateway-system
+    namespace: gateway
     server: https://kubernetes.default.svc
   # Envoy Gateway's helm chart is published OCI-only on docker.io.
   # kustomize v5 helmCharts does not support OCI repos, so we use Argo's
@@ -18,11 +18,12 @@ spec:
     targetRevision: v1.5.0
     helm:
       releaseName: eg
-      # Defaults are fine for a single-node homelab. The chart provisions
-      # the `eg` GatewayClass with controller name
-      # gateway.envoyproxy.io/gatewayclass-controller, and reconciles
-      # Gateways into per-Gateway Envoy Deployments + Services in the
-      # `envoy-gateway-system` namespace by default.
+      # Install into the `gateway` namespace. The per-Gateway Envoy
+      # data-plane Deployments + Services that Envoy Gateway provisions
+      # for each accepted Gateway also land in this namespace by default,
+      # so all Gateway machinery (controller + proxies) lives together.
+      # The `eg` GatewayClass (cluster-scoped) is authored in
+      # infra/kustomize/gateway/gatewayclass.yaml.
   project: default
   ignoreDifferences:
     - group: apps
