@@ -1,23 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Note: the cilium helm chart with gatewayAPI.enabled=true renders the
-# `cilium` GatewayClass itself, so we do not author one.
-
-resources:
-  # TLSRoute CRD (experimental channel). The homelab does not author any
-  # TLSRoute objects, but cilium 1.17.x unconditionally registers
-  # `v1alpha2.TLSRouteList` in its client-go scheme; without the CRD,
-  # every Gateway reconcile crashes with
-  #   `no kind is registered for the type v1alpha2.TLSRouteList in scheme`
-  # The cilium helm chart does NOT ship Gateway-API CRDs, so we pin the
-  # upstream one by URL. Pinned to gateway-api v1.2.1 (matches the standard
-  # channel CRDs already installed cluster-wide).
-  - https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
-  # LB-IPAM pool removed too — strong correlation with envoy upstream-
-  # connect 503s, even after the L2 announcement was dropped. FRP reaches
-  # the Gateway via ClusterIP so no LAN-visible IP is required for
-  # external traffic. Service falls back to EXTERNAL-IP <pending>.
+# Cilium provides CNI + kube-proxy replacement only. Gateway-API
+# controller is now envoy-gateway (gatewayAPI.enabled=false in values.yaml).
+# The TLSRoute CRD pin previously here is no longer required — cilium
+# only registers v1alpha2.TLSRouteList in its scheme when the gatewayAPI
+# feature is enabled. Keep the CRD installed via the gateway-api
+# standard bundle that's already cluster-wide.
 
 helmCharts:
   - name: cilium

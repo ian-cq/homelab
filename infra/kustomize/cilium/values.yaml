@@ -15,12 +15,20 @@ hubble:
   ui:
     enabled: false
 
-# Cilium Gateway API controller. Requires kubeProxyReplacement=true (set above)
-# and the standard-channel Gateway API CRDs (already installed cluster-wide).
-# Cilium runs Envoy embedded in cilium-agent for the Gateway listeners; no
-# separate Envoy DaemonSet is deployed.
+# Cilium Gateway API controller DISABLED — migrated to Envoy Gateway.
+# Cilium's embedded-envoy Gateway path produced consistent 5s
+# upstream-connect timeouts (HTTP 503) on every Gateway-routed host on
+# this kernel/k3s combo (kernel 6.12, k3s v1.36, cilium 1.17.3), even
+# after full reinstall, bpf.tproxy=true, and various L2/LB-IPAM toggles.
+# See claude-agent/logs/2026-06-24-cilium-reinstall-result.md and
+# the migration log for the full diagnostic chain.
+#
+# Cilium continues to provide CNI + kube-proxy replacement. Gateway-API
+# is now served by envoy-gateway (see deployments/applications/system/
+# envoy-gateway.yaml) which provisions its own Envoy proxy per Gateway
+# in the envoy-gateway-system namespace.
 gatewayAPI:
-  enabled: true
+  enabled: false
 
 # L2 announcements disabled. The CiliumL2AnnouncementPolicy on wlp4s0
 # (WiFi) appeared to correlate with envoy upstream-connect timeouts to
@@ -30,13 +38,9 @@ gatewayAPI:
 l2announcements:
   enabled: false
 
-# Use BPF sk_lookup for transparent-proxy delivery to envoy instead of the
-# iptables xt_socket fallback. xt_socket appears to mis-route the return
-# path of envoy upstream connects on kernel 6.12 (envoy source IP is the
-# cilium ingress endpoint 10.42.0.251 which is not bound to any host
-# interface and relies on fwmark 0x200 -> table 2004 lo delivery).
-# Symptom without this: envoy reports "upstream connect error: connection
-# timeout" after 5s on every Gateway-routed host; backend pods are
-# healthy and reachable directly.
+# bpf.tproxy was set to true while debugging the cilium-gateway 503.
+# It's now inert (no cilium-managed envoy listeners) but harmless;
+# leaving it set so a future re-enable of cilium gatewayAPI starts in
+# the same state.
 bpf:
   tproxy: true

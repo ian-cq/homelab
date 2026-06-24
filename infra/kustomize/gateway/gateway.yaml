@@ -4,7 +4,7 @@ metadata:
   name: public
   namespace: cilium-system
 spec:
-  gatewayClassName: cilium
+  gatewayClassName: eg
   listeners:
     - name: https
       protocol: HTTPS
