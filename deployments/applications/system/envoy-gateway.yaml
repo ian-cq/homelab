@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: envoy-gateway
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: envoy-gateway-system
+    server: https://kubernetes.default.svc
+  # Envoy Gateway's helm chart is published OCI-only on docker.io.
+  # kustomize v5 helmCharts does not support OCI repos, so we use Argo's
+  # native helm source directly instead of the kustomize+helm wrapper
+  # pattern used by the rest of the repo (cert-manager, cilium, etc).
+  source:
+    repoURL: docker.io/envoyproxy
+    chart: gateway-helm
+    targetRevision: v1.5.0
+    helm:
+      releaseName: eg
+      # Defaults are fine for a single-node homelab. The chart provisions
+      # the `eg` GatewayClass with controller name
+      # gateway.envoyproxy.io/gatewayclass-controller, and reconciles
+      # Gateways into per-Gateway Envoy Deployments + Services in the
+      # `envoy-gateway-system` namespace by default.
+  project: default
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /status
+  syncPolicy:
+    automated: null
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

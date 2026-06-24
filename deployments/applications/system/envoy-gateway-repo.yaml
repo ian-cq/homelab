@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oci-envoyproxy
+  labels:
+    argocd.argoproj.io/secret-type: repository
+  # Registers the public docker.io/envoyproxy OCI registry with Argo CD
+  # so the envoy-gateway Application can pull `gateway-helm` as an OCI
+  # chart. No credentials needed — Docker Hub anonymous pull.
+stringData:
+  name: envoyproxy-oci
+  type: helm
+  url: docker.io/envoyproxy
+  enableOCI: "true"
