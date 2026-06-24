@@ -1,0 +1,77 @@
+# Gateway-API HTTPRoute for Plane.
+#
+# Replaces the chart's built-in Ingress (disabled via values.yaml). The
+# routing rules mirror the upstream Ingress template
+# (templates/ingress.yaml in plane-ce 1.5.1):
+#
+#   /          -> plane-web    :3000
+#   /api       -> plane-api    :8000
+#   /auth      -> plane-api    :8000
+#   /live/     -> plane-live   :3000
+#   /spaces    -> plane-space  :3000
+#   /god-mode  -> plane-admin  :3000
+#   /uploads   -> plane-minio  :9000   (docstore bucket; local minio only)
+#
+# Cilium evaluates rules with longest-prefix match per Gateway-API spec,
+# so order in this manifest does not matter.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: plane
+  namespace: plane
+spec:
+  parentRefs:
+    - name: public
+      namespace: cilium-system
+  hostnames:
+    - mgmt.62a.quanianitis.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: plane-api
+          port: 8000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /auth
+      backendRefs:
+        - name: plane-api
+          port: 8000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /live
+      backendRefs:
+        - name: plane-live
+          port: 3000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /spaces
+      backendRefs:
+        - name: plane-space
+          port: 3000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /god-mode
+      backendRefs:
+        - name: plane-admin
+          port: 3000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /uploads
+      backendRefs:
+        - name: plane-minio
+          port: 9000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: plane-web
+          port: 3000

@@ -7,4 +7,5 @@ resources:
   - httpbin.yaml
   - obsidian-livesync.yaml
   - cloudflared.yaml
+  - plane.yaml
   # - text-summarizer.yaml

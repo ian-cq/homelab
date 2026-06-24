@@ -1,0 +1,161 @@
+# Plane CE (self-hosted) values for the homelab.
+#
+# Reference: https://github.com/makeplane/helm-charts/tree/main/plane-ce
+# Chart version: pinned in kustomization.yaml
+#
+# Design notes:
+# - All app services use clusterIP: None (headless). HTTPRoute targets are
+#   the headless Services; cilium-envoy routes by endpoints.
+# - The chart's built-in Ingress is disabled (we use Gateway-API HTTPRoute).
+# - All stateful workloads are pinned to the longhorn StorageClass because
+#   the cluster has two StorageClasses both marked default (local-path and
+#   longhorn). Without an explicit class the PVC binding is ambiguous.
+# - SECRET_KEY and LIVE_SERVER_SECRET_KEY were generated locally (openssl
+#   rand -hex 32) and overridden here so we are not running with the
+#   well-known chart defaults. These should eventually move to 1Password
+#   via external-secrets; tracked as a followup.
+
+# planeVersion is set to the value the chart ships with; do not bump
+# without also confirming the upstream Plane release notes.
+planeVersion: v1.2.0
+
+ingress:
+  # We use Gateway-API HTTPRoute (see httproute.yaml) instead of the
+  # chart's built-in Ingress.
+  enabled: false
+  # appHost is still consumed by the chart even when ingress is disabled
+  # (WEB_URL and CORS_ALLOWED_ORIGINS templating). The WEB_URL ConfigMap
+  # entry is patched to https:// via the kustomize patch in this dir.
+  appHost: "mgmt.62a.quanianitis.com"
+
+ssl:
+  # No cert-manager Issuer created here; the wildcard cert is provisioned
+  # by the gateway app and attached at the Gateway listener level.
+  createIssuer: false
+  generateCerts: false
+
+redis:
+  local_setup: true
+  image: valkey/valkey:7.2.11-alpine
+  servicePort: 6379
+  storageClass: longhorn
+  volumeSize: 1Gi
+  pullPolicy: IfNotPresent
+
+postgres:
+  local_setup: true
+  image: postgres:15.7-alpine
+  servicePort: 5432
+  storageClass: longhorn
+  volumeSize: 10Gi
+  pullPolicy: IfNotPresent
+
+rabbitmq:
+  local_setup: true
+  image: rabbitmq:3.13.6-management-alpine
+  servicePort: 5672
+  managementPort: 15672
+  storageClass: longhorn
+  volumeSize: 1Gi
+  default_user: plane
+  default_password: plane
+  pullPolicy: IfNotPresent
+
+minio:
+  image: minio/minio:latest
+  image_mc: minio/mc:latest
+  local_setup: true
+  pullPolicy: IfNotPresent
+  root_password: password
+  root_user: admin
+  storageClass: longhorn
+  volumeSize: 20Gi
+  env:
+    minio_endpoint_ssl: false
+
+web:
+  replicas: 1
+  memoryLimit: 1000Mi
+  cpuLimit: 500m
+  cpuRequest: 50m
+  memoryRequest: 50Mi
+  image: artifacts.plane.so/makeplane/plane-frontend
+  pullPolicy: IfNotPresent
+
+space:
+  replicas: 1
+  memoryLimit: 1000Mi
+  cpuLimit: 500m
+  cpuRequest: 50m
+  memoryRequest: 50Mi
+  image: artifacts.plane.so/makeplane/plane-space
+  pullPolicy: IfNotPresent
+
+admin:
+  replicas: 1
+  memoryLimit: 1000Mi
+  cpuLimit: 500m
+  cpuRequest: 50m
+  memoryRequest: 50Mi
+  image: artifacts.plane.so/makeplane/plane-admin
+  pullPolicy: IfNotPresent
+
+live:
+  replicas: 1
+  memoryLimit: 1000Mi
+  cpuLimit: 500m
+  cpuRequest: 50m
+  memoryRequest: 50Mi
+  image: artifacts.plane.so/makeplane/plane-live
+  pullPolicy: IfNotPresent
+
+api:
+  replicas: 1
+  memoryLimit: 1500Mi
+  cpuLimit: 1000m
+  cpuRequest: 100m
+  memoryRequest: 200Mi
+  image: artifacts.plane.so/makeplane/plane-backend
+  pullPolicy: IfNotPresent
+
+worker:
+  replicas: 1
+  memoryLimit: 1000Mi
+  cpuLimit: 500m
+  cpuRequest: 50m
+  memoryRequest: 100Mi
+  image: artifacts.plane.so/makeplane/plane-backend
+  pullPolicy: IfNotPresent
+
+beatworker:
+  replicas: 1
+  memoryLimit: 500Mi
+  cpuLimit: 250m
+  cpuRequest: 25m
+  memoryRequest: 50Mi
+  image: artifacts.plane.so/makeplane/plane-backend
+  pullPolicy: IfNotPresent
+
+env:
+  pgdb_username: plane
+  pgdb_password: plane
+  pgdb_name: plane
+
+  docstore_bucket: "uploads"
+  doc_upload_size_limit: "5242880"
+
+  # Generated locally with `openssl rand -hex 32` on 2026-06-24. Rotate by
+  # editing here (the chart re-templates the Secret on every sync; pods
+  # need to be rolled to pick up new values).
+  secret_key: "837cffeacea3e1e78847a8636db1e51f9fdedcd58b45d7aee89d4c97b46a7e94"
+  live_server_secret_key: "68c796308688f6aaa12e45edd15c3527eb4e25588769c24ce49795d0d2e1f874"
+
+  sentry_dsn: ""
+  sentry_environment: ""
+
+  # Empty string lets the chart template auto-construct
+  # `http://mgmt...,https://mgmt...` from appHost.
+  cors_allowed_origins: ""
+
+  default_cluster_domain: cluster.local
+  api_key_rate_limit: "60/minute"
