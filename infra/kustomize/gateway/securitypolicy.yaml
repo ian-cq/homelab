@@ -10,6 +10,23 @@
 #   it -- current and future. One policy, one Secret, no per-namespace
 #   plumbing.
 #
+# Centralized callback: `redirectURL` is pinned to
+#   https://auth.62a.quanianitis.com/oauth2/callback
+# regardless of which protected subdomain initiated the flow. After
+# Google redirects the user back to auth.62a/oauth2/callback, Envoy's
+# OIDC filter completes the token exchange, sets a session cookie
+# scoped to `62a.quanianitis.com` (so every subdomain inherits it),
+# reads the original URL out of the OAuth `state` parameter, and 302s
+# the user back where they started. The browser then sends the
+# shared cookie to e.g. grafana.62a, the filter validates, and the
+# request reaches the backend.
+#
+# Only one redirect URI needs to be registered in the Google OAuth 2.0
+# Client's Authorized redirect URIs list:
+#   https://auth.62a.quanianitis.com/oauth2/callback
+# Adding new protected hostnames in future requires NO Google Console
+# changes -- they all funnel through auth.62a.
+#
 # Hosts covered today (all parented to gateway/public):
 #   - argocd.62a.quanianitis.com
 #   - grafana.62a.quanianitis.com
@@ -17,16 +34,10 @@
 #   - kubernetes.62a.quanianitis.com
 #   - mgmt.62a.quanianitis.com         (once plane is bootstrapped)
 #
-# Per-host callbacks: redirectURL is intentionally NOT set so Envoy
-# uses its default template
-#   %REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback
-# which means each host gets its own callback (e.g.
-# https://grafana.62a.quanianitis.com/oauth2/callback). Every
-# protected hostname must therefore be registered in the Google OAuth
-# 2.0 Client's Authorized redirect URIs list before users on that host
-# can complete login. As of writing only prometheus's callback is
-# registered; Ian needs to add the rest before flipping this on for
-# argocd / grafana / kubernetes / mgmt.
+# auth.62a.quanianitis.com is a synthetic host: it has no backend, just
+# an HTTPRoute (auth-callback.yaml in this directory) that exists to
+# make Envoy accept the hostname at the listener. The OIDC filter
+# intercepts /oauth2/callback before the route's backend is reached.
 #
 # Secret: `google-oauth-client` in this namespace. Created out-of-band
 # (kubectl apply, NOT in git) so the client_secret never lands in the
@@ -52,7 +63,10 @@ spec:
       name: google-oauth-client
     clientSecret:
       name: google-oauth-client
-    # redirectURL omitted on purpose -- see header comment.
+    redirectURL: https://auth.62a.quanianitis.com/oauth2/callback
+    # Share the session cookie across every *.62a.quanianitis.com host
+    # so a single Google login authorises all protected subdomains.
+    cookieDomain: 62a.quanianitis.com
     logoutPath: /logout
     scopes:
       - openid

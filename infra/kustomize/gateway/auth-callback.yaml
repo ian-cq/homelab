@@ -1,0 +1,55 @@
+# Synthetic HTTPRoute for auth.62a.quanianitis.com.
+#
+# Purpose: this hostname has no real backend -- it exists only to host
+# the centralized OAuth callback configured in securitypolicy.yaml
+# (redirectURL=https://auth.62a.quanianitis.com/oauth2/callback). We
+# need *some* HTTPRoute that matches the hostname so Envoy accepts the
+# request at the listener; otherwise Envoy 404s before the OIDC filter
+# runs and the callback fails.
+#
+# The OIDC filter intercepts /oauth2/callback and /logout itself (it
+# does the token exchange and 302s the user back to the original URL,
+# without ever dialing the backend) so the backend Service here is a
+# no-op placeholder. We use a Service with no selector and no
+# Endpoints so the cluster-level data path can't accidentally route to
+# anything; if a request ever does slip past the filter to the
+# backend, the user gets a clean 503 instead of being silently
+# proxied to some real workload.
+#
+# Path matching is narrowed to /oauth2/ so that
+#   https://auth.62a.quanianitis.com/<anything-else>
+# returns a 404 at the route layer (less weird than redirect-loop-
+# into-Google-then-back).
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-blackhole
+  namespace: gateway
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  # No selector -> no Endpoints, so any request that somehow reaches
+  # this Service gets ConnectionRefused / 503 from Envoy.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: auth-callback
+  namespace: gateway
+spec:
+  parentRefs:
+    - name: public
+  hostnames:
+    - auth.62a.quanianitis.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /oauth2/
+      backendRefs:
+        - name: auth-blackhole
+          port: 80
