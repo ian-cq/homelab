@@ -18,7 +18,6 @@ resources:
   - kubernetes-dashboard.yaml
   - argocd.yaml
   - gateway.yaml
-  - oauth2-proxy.yaml
   - envoy-gateway-repo.yaml
   - envoy-gateway.yaml
   # - opentelemetry.yaml
