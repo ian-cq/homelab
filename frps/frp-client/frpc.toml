@@ -21,30 +21,26 @@ log.maxDays = 7
 
 # --- Proxies ---
 #
-# Single TCP passthrough proxy: VPS :443 → Cilium Gateway ClusterIP :443.
+# Single TCP passthrough proxy: VPS :443 → public Gateway ClusterIP :443.
 # TLS terminates inside the cluster on the Gateway listener using
 # cert-manager Let's Encrypt certs. frps just tunnels bytes; it does NOT
 # need vhostHTTPSPort. SNI-based hostname routing happens inside the
-# Gateway listeners.
+# Gateway listener.
 #
-# The Gateway Service is type=LoadBalancer but k3s is started with
-# --disable=servicelb so it stays at <pending> external IP. ClusterIP is
-# reachable from the node host network thanks to Cilium socket-LB.
+# Gateway controller: Envoy Gateway (gateway.envoyproxy.io). The per-
+# Gateway data-plane proxy lives at gateway/envoy-gateway-public-<hash>;
+# its ClusterIP is what we dial here. ClusterIP is stable as long as
+# the Service is not recreated; the Service is recreated whenever the
+# Gateway moves namespaces or is deleted, so this value needs refresh
+# in lockstep with any Gateway-level structural change. Refresh with:
+#   kubectl -n gateway get svc -l gateway.envoyproxy.io/owning-gateway-name=public \
+#     -o jsonpath='{.items[0].spec.clusterIP}'
 
 [[proxies]]
 name = "gateway-https"
 type = "tcp"
 remotePort = 443
-# Cilium Gateway 'public' in the cilium-system namespace.
-# Service: cilium-system/cilium-gateway-public (ClusterIP, port 443).
-# (Migrated from the 'gateway' namespace; helm release now lives in
-# cilium-system alongside the agent.)
-# NOTE: ClusterIP is stable unless the Service object is deleted, but
-# the host network can't easily resolve cluster.local DNS, so we hard-
-# code the IP. If the Gateway Service is ever recreated, refresh this
-# value with:
-#   kubectl -n cilium-system get svc cilium-gateway-public -o jsonpath='{.spec.clusterIP}'
-localIP = "10.43.35.109"
+localIP = "10.43.201.212"
 localPort = 443
 
 # TCP: SSH access to homelab
