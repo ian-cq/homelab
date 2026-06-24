@@ -14,11 +14,10 @@ resources:
   # upstream one by URL. Pinned to gateway-api v1.2.1 (matches the standard
   # channel CRDs already installed cluster-wide).
   - https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.1/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
-  # LB-IPAM pool for the public Gateway Service. Allocates a stable
-  # LoadBalancer IP from the homelab LAN range; FRP still reaches the
-  # Gateway via ClusterIP, so the LB IP is informational unless a future
-  # L2/BGP announcer is reintroduced.
-  - lb-pool.yaml
+  # LB-IPAM pool removed too — strong correlation with envoy upstream-
+  # connect 503s, even after the L2 announcement was dropped. FRP reaches
+  # the Gateway via ClusterIP so no LAN-visible IP is required for
+  # external traffic. Service falls back to EXTERNAL-IP <pending>.
 
 helmCharts:
   - name: cilium
