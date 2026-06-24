@@ -29,3 +29,14 @@ gatewayAPI:
 # uplink before re-enabling L2).
 l2announcements:
   enabled: false
+
+# Use BPF sk_lookup for transparent-proxy delivery to envoy instead of the
+# iptables xt_socket fallback. xt_socket appears to mis-route the return
+# path of envoy upstream connects on kernel 6.12 (envoy source IP is the
+# cilium ingress endpoint 10.42.0.251 which is not bound to any host
+# interface and relies on fwmark 0x200 -> table 2004 lo delivery).
+# Symptom without this: envoy reports "upstream connect error: connection
+# timeout" after 5s on every Gateway-routed host; backend pods are
+# healthy and reachable directly.
+bpf:
+  tproxy: true
