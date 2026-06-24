@@ -25,4 +25,3 @@ resources:
   - gateway.yaml
   - gatewayclass.yaml
   - securitypolicy.yaml
-  - auth-callback.yaml
