@@ -11,7 +11,17 @@ resources:
   # syncPolicy still ensures the namespace exists if the central app hasn't
   # applied yet.
   - certificate.yaml
-  - httproute.yaml
+  # httproute.yaml intentionally omitted: prometheus is NOT exposed via the
+  # public Gateway / frpc tunnel. Ian's policy is that any host whose
+  # /oauth2/callback URI is not registered in Google Console must not be
+  # reachable via the external (VPS → frp → cluster) path. The prometheus
+  # callback URI is intentionally NOT in Google Console, so the public
+  # HTTPRoute is dropped. Access prometheus in-cluster only:
+  #   kubectl -n monitoring port-forward svc/prometheus-server 9090:80
+  # or via grafana (which has its OWN OIDC + its own prometheus datasource).
+  # If you ever want to re-expose, restore httproute.yaml AND add
+  # https://prometheus.62a.quanianitis.com/oauth2/callback to the Google
+  # Console redirect URI list for client_id 114204026619-…
 
 helmCharts:
   - name: prometheus
