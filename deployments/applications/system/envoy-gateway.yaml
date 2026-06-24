@@ -31,7 +31,6 @@ spec:
       jsonPointers:
         - /status
   syncPolicy:
-    automated: null
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
