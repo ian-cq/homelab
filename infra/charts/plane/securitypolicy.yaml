@@ -1,0 +1,63 @@
+# Envoy Gateway SecurityPolicy for plane (mgmt.62a.quanianitis.com).
+#
+# DORMANT: this file is intentionally NOT listed in kustomization.yaml
+# resources. Plane itself is not yet bootstrapped (Argo Application
+# 'quanianitis.in-cluster.services.plane' is Missing because the `plane`
+# namespace and the five chart-prereq objects below do not exist) so
+# attaching an OIDC policy now would create a SecurityPolicy referencing
+# a Secret that does not exist and clutter the gateway status with a
+# permanent failure condition.
+#
+# To enable, in order:
+#   1. Create the `plane` namespace and bootstrap the chart's five
+#      prereq objects:
+#        - ConfigMap plane-app-vars
+#        - ConfigMap plane-live-vars
+#        - Secret    plane-app-secrets
+#        - Secret    plane-doc-store-secrets
+#        - Secret    plane-live-secrets
+#      (See upstream plane-ce 1.5.1 chart docs; values.yaml in this
+#      directory references them via existingConfigMap / existingSecret.)
+#   2. Sync the plane Argo Application and confirm /api, /auth, /live,
+#      /spaces, /god-mode, /uploads and / all return non-5xx.
+#   3. Create the `google-oauth-client` Opaque Secret in the `plane`
+#      namespace with keys `client-id` and `client-secret`. Use the same
+#      client_id as monitoring's secret; the client_secret can also be
+#      reused since both subdomains belong to the same Google OAuth
+#      client (project_id=personal-quanianitis).
+#   4. Add `https://mgmt.62a.quanianitis.com/oauth2/callback` to the
+#      OAuth client's Authorized redirect URIs in Google Cloud Console.
+#   5. Add `securitypolicy.yaml` to the `resources:` list in this
+#      directory's kustomization.yaml and commit.
+#
+# Once enabled, every request to mgmt.62a.quanianitis.com (including
+# /api, /auth, /live, etc.) will be intercepted by Envoy's OIDC filter
+# and redirected to Google. This is what we want for the human-facing
+# web UI, but it WILL break programmatic clients hitting /api (e.g. the
+# plane CLI, the live websocket from plane-web on a fresh load). If
+# that turns out to matter, narrow this policy with `targetRefs.
+# sectionName` to specific HTTPRoute rules, or split the HTTPRoute into
+# /api (unprotected, using its own bearer auth) and / (protected).
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: plane-oidc
+  namespace: plane
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: plane
+  oidc:
+    provider:
+      issuer: https://accounts.google.com
+    clientIDRef:
+      name: google-oauth-client
+    clientSecret:
+      name: google-oauth-client
+    redirectURL: https://mgmt.62a.quanianitis.com/oauth2/callback
+    logoutPath: /logout
+    scopes:
+      - openid
+      - email
+      - profile
