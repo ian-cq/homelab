@@ -120,7 +120,14 @@ api:
 
 worker:
   replicas: 1
-  memoryLimit: 1000Mi
+  # 2026-06-24: bumped from 1000Mi → 2500Mi. Celery defaults concurrency
+  # to multiprocessing.cpu_count() which sees the *node's* CPU count
+  # (16 threads) even though our cgroup cpuLimit is 500m. Each prefork
+  # child loads the full plane codebase; 16 × ~150Mi RSS easily exceeds
+  # 1Gi and OOMKills with exit 137 within ~20s. Long-term cleaner fix
+  # is to pin CELERY_WORKER_CONCURRENCY via env, but the chart does not
+  # expose that knob; raising the limit is the minimal patch.
+  memoryLimit: 2500Mi
   cpuLimit: 500m
   cpuRequest: 50m
   memoryRequest: 100Mi
