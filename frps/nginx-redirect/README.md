@@ -20,10 +20,14 @@ never touches TLS.
 
 ```
 nginx-redirect/
-├── docker-compose.yml   # nginx:1.27-alpine, host :80
-├── nginx.conf           # single server block, 301 + /healthz
-└── README.md            # this file
+├── docker-compose.yml      # nginx:1.27-alpine, host :80
+├── nginx.conf              # single server block, 301 + /healthz
+├── nginx-redirect.service  # systemd unit wrapping `docker compose`
+└── README.md               # this file
 ```
+
+On the VPS the files live in `/opt/nginx-redirect/` and the unit is
+installed at `/etc/systemd/system/nginx-redirect.service`.
 
 ## Deploy
 
@@ -32,11 +36,27 @@ config no longer claims port 80 (`vhostHTTPPort` removed, frps
 restarted).
 
 ```sh
-# from the VPS, in the directory holding docker-compose.yml
-docker compose up -d
-docker compose ps
-docker compose logs --tail 50
+# from the repo, push files to the VPS
+sudo install -d -m 0755 -o root -g root /opt/nginx-redirect
+sudo install -m 0644 docker-compose.yml nginx.conf README.md /opt/nginx-redirect/
+sudo install -m 0644 nginx-redirect.service /etc/systemd/system/
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now nginx-redirect.service
+sudo systemctl status nginx-redirect.service
 ```
+
+## Lifecycle
+
+- `sudo systemctl start nginx-redirect`   → `docker compose up -d`
+- `sudo systemctl stop nginx-redirect`    → `docker compose down`
+- `sudo systemctl reload nginx-redirect`  → recreate containers
+  (use after changing `nginx.conf` or `docker-compose.yml`)
+- `sudo systemctl restart nginx-redirect` → down + up
+
+Container crash recovery is independent of systemd: `restart:
+unless-stopped` in `docker-compose.yml` brings nginx back in <1s if it
+segfaults, without waiting for systemd to notice.
 
 ## Verify
 
@@ -59,7 +79,7 @@ curl -s http://127.0.0.1/healthz   # on the VPS only
 ## Rollback
 
 ```sh
-docker compose down
+sudo systemctl disable --now nginx-redirect.service
 # then put `vhostHTTPPort = 80` back in /etc/frp/frps.toml and restart frps
 sudo systemctl restart frps
 ```

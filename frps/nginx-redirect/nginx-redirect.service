@@ -1,0 +1,23 @@
+[Unit]
+Description=nginx-redirect — HTTP->HTTPS edge for *.62a.quanianitis.com
+Documentation=file:///opt/nginx-redirect/README.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/nginx-redirect
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose down
+ExecReload=/usr/bin/docker compose up -d --remove-orphans --force-recreate
+TimeoutStartSec=120
+
+# We want systemd-managed lifecycle (boot/stop/reload). Per-container
+# crash recovery is handled by `restart: unless-stopped` in
+# docker-compose.yml so a crashing nginx restarts in <1s instead of
+# waiting for systemd to notice.
+
+[Install]
+WantedBy=multi-user.target
