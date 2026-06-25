@@ -54,6 +54,25 @@ spec:
       backendRefs:
         - name: plane-space
           port: 3000
+    # `/god-mode` (no trailing slash) -> 301 redirect to `/god-mode/`.
+    # plane-admin is an nginx container that emits an absolute-URL
+    # redirect (`Location: http://127.0.0.1:3000/god-mode/`) when it
+    # sees a request without the trailing slash, because nginx's
+    # default redirect uses `$server_addr:$server_port`. The browser
+    # mis-resolves that to `http://mgmt.62a.quanianitis.com:3000/...`
+    # and gets blocked. We short-circuit at envoy with a clean 301.
+    - matches:
+        - path:
+            type: Exact
+            value: /god-mode
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /god-mode/
+            statusCode: 301
     - matches:
         - path:
             type: PathPrefix
