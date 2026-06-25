@@ -7,6 +7,18 @@ service:
   nodePort: 31000
 adminUser: admin
 adminPassword: admin
+# Skip Grafana's login screen for browsers that have already passed
+# the Gateway-wide Google OIDC at envoy. Same posture as the kubernetes
+# dashboard and argocd: OIDC gates external access to Ian's Google
+# account; behind that gate, anonymous = Admin so the UI loads straight
+# into dashboards with no second login. admin:admin above stays as a
+# fallback for CLI / scripted access.
+grafana.ini:
+  auth:
+    disable_login_form: true
+  auth.anonymous:
+    enabled: true
+    org_role: Admin
 datasources:
   datasources.yaml:
     apiVersion: 1

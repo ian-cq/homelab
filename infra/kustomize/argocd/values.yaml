@@ -16,3 +16,18 @@ server:
 configs:
   params:
     server.insecure: true
+  # Skip the ArgoCD login screen for browsers that have already passed
+  # the Gateway-wide Google OIDC at envoy. External access is gated to
+  # Ian's Google account by the SecurityPolicy in gateway/. Behind that
+  # gate, anonymous = role:admin so the UI loads straight into the apps
+  # view with no second login step.
+  cm:
+    users.anonymous.enabled: "true"
+  rbac:
+    policy.default: role:admin
+  # Fallback admin login for CLI / scripted access. bcrypt of "admin",
+  # generated with `htpasswd -bnBC 10 "" admin`. Not a real secret on
+  # this single-user homelab.
+  secret:
+    argocdServerAdminPassword: $2a$10$NkGtPsPpIUU.j7fz./qq2OMb2QLrCu1KCHf.hMRHJuyMJJBZTP7La
+    argocdServerAdminPasswordMtime: "2026-06-25T15:30:00Z"
