@@ -16,3 +16,4 @@ resources:
   - admin-user-monitoring.yaml
   - certificate.yaml
   - httproute.yaml
+  - credential-injection.yaml

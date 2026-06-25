@@ -10,6 +10,15 @@ spec:
   hostnames:
     - kubernetes.62a.quanianitis.com
   rules:
-    - backendRefs:
+    - filters:
+        # Inject `Authorization: Bearer <admin-user-token>` so the
+        # dashboard's token login screen is auto-skipped. See
+        # credential-injection.yaml for the full rationale.
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.envoyproxy.io
+            kind: HTTPRouteFilter
+            name: dashboard-bearer
+      backendRefs:
         - name: kubernetes-dashboard
           port: 80

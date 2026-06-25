@@ -10,6 +10,19 @@
 # Retrieve the login token with:
 #   kubectl -n monitoring get secret admin-user-token \
 #     -o go-template='{{ .data.token | base64decode }}'
+#
+# Out-of-band bootstrap for the envoy credential-injection Secret
+# (so the gateway can auto-skip the dashboard's login screen):
+#
+#   TOKEN=$(kubectl -n monitoring get secret admin-user-token \
+#     -o go-template='{{ .data.token | base64decode }}')
+#   kubectl -n monitoring create secret generic dashboard-bearer-credential \
+#     --from-literal=credential="Bearer ${TOKEN}" \
+#     --dry-run=client -o yaml | kubectl apply -f -
+#
+# Re-run after the SA's token-controller rotates the JWT, or whenever
+# the admin-user-token Secret is recreated. The injected value is the
+# entire header value including the literal `Bearer ` prefix.
 ---
 apiVersion: v1
 kind: ServiceAccount
