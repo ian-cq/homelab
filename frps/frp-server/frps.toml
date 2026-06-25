@@ -4,8 +4,11 @@
 bindAddr = "0.0.0.0"
 bindPort = 7000
 
-# HTTP virtual host — Cloudflare DNS-only (or Flexible) points here
-vhostHTTPPort = 80
+# NOTE: no vhostHTTPPort. Port 80 on the VPS is owned by the
+# nginx-redirect compose stack (../nginx-redirect/) which returns
+# 301 -> https://$host$request_uri. HTTPS is tunneled as a TCP proxy on
+# :443 (see frp-client/frpc.toml) and terminates inside the cluster on
+# the cilium gateway. frps never sees plaintext HTTP.
 
 # Authentication
 auth.method = "token"

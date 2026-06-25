@@ -1,0 +1,31 @@
+# HTTP -> HTTPS redirect at the VPS edge.
+#
+# Replaces frps's previously-bound-but-unused :80 vhost. After deploying
+# this, frps.toml must drop `vhostHTTPPort = 80` and frps must be
+# restarted so :80 is free for nginx to bind.
+#
+# Why a separate container instead of a kubernetes Ingress / Gateway
+# HTTPRoute redirect: the cilium gateway sits behind frp; only :443 is
+# tunneled. Plaintext :80 hits the VPS directly, never reaches the
+# cluster, so the redirect has to live here on the VPS.
+
+services:
+  nginx-redirect:
+    image: nginx:1.27-alpine
+    container_name: nginx-redirect
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

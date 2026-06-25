@@ -53,7 +53,7 @@ echo "==> created ${CONFIG_DIR}"
 if command -v ufw &>/dev/null; then
   echo "==> configuring ufw"
   sudo ufw allow 22/tcp comment "SSH"
-  sudo ufw allow 80/tcp comment "FRP HTTP vhost"
+  sudo ufw allow 80/tcp comment "nginx-redirect HTTP->HTTPS"
   sudo ufw allow 7000/tcp comment "FRP bind port"
   sudo ufw allow 2222/tcp comment "FRP TCP proxy (SSH)"
   sudo ufw --force enable
