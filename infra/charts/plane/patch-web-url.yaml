@@ -15,7 +15,14 @@
 #    for the /god-mode admin shell, the workspace app, and the /spaces app.
 #    Setting them here makes /api/instances/ return real https URLs so the
 #    web client emits correct cross-app links behind the public Gateway.
-#    Trailing slashes are intentionally omitted - the API joins paths.
+#
+#    IMPORTANT: these three are *bare origins only*; do NOT include the
+#    /god-mode or /spaces path suffix. plane/authentication/utils/host.py
+#    base_host() appends ADMIN_BASE_PATH (default "/god-mode/") and
+#    SPACE_BASE_PATH (default "/spaces/") itself. If you put the suffix
+#    here too, every server-side redirect from the signup / signin
+#    endpoints lands at e.g. "/god-mode/god-mode/" - which 404s on the
+#    plane-admin SPA and silently breaks the initial admin bootstrap.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -24,5 +31,5 @@ metadata:
 data:
   WEB_URL: "https://mgmt.62a.quanianitis.com"
   APP_BASE_URL: "https://mgmt.62a.quanianitis.com"
-  ADMIN_BASE_URL: "https://mgmt.62a.quanianitis.com/god-mode"
-  SPACE_BASE_URL: "https://mgmt.62a.quanianitis.com/spaces"
+  ADMIN_BASE_URL: "https://mgmt.62a.quanianitis.com"
+  SPACE_BASE_URL: "https://mgmt.62a.quanianitis.com"
