@@ -11,9 +11,9 @@ ipam:
 
 hubble:
   relay:
-    enabled: false
+    enabled: true
   ui:
-    enabled: false
+    enabled: true
 
 # Cilium Gateway API controller DISABLED — migrated to Envoy Gateway.
 # Cilium's embedded-envoy Gateway path produced consistent 5s

@@ -1,0 +1,24 @@
+# HTTPRoute exposing the Hubble UI at hubble.62a.quanianitis.com.
+#
+# Backed by the chart-rendered `cilium-system/hubble-ui:80` Service
+# (enabled via cilium values.yaml: hubble.relay.enabled + hubble.ui.enabled).
+#
+# Auth posture: external access is gated by the gateway-wide Google
+# OIDC SecurityPolicy (gateway/public-oidc). Hubble UI has no native
+# auth so this is the only access control. Single-user homelab: once
+# past Google OIDC the user can inspect all cluster network flows.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hubble-ui
+  namespace: cilium-system
+spec:
+  parentRefs:
+    - name: public
+      namespace: gateway
+  hostnames:
+    - hubble.62a.quanianitis.com
+  rules:
+    - backendRefs:
+        - name: hubble-ui
+          port: 80

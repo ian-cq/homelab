@@ -8,6 +8,9 @@ kind: Kustomization
 # feature is enabled. Keep the CRD installed via the gateway-api
 # standard bundle that's already cluster-wide.
 
+resources:
+  - httproute.yaml
+
 helmCharts:
   - name: cilium
     repo: https://helm.cilium.io
