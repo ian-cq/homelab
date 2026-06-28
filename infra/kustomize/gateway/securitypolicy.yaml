@@ -88,6 +88,15 @@ spec:
     # session cookies scoped to the parent domain are sent by the
     # browser to all subdomains.
     cookieDomain: 62a.quanianitis.com
+    # Pin the IdToken cookie to a stable name so the JWT filter below
+    # can read from it. Without this override Envoy appends a random
+    # suffix (e.g. `IdToken-15b6df4f`) and `jwt.extractFrom.cookies`
+    # has no way to match it. The OAuth2 filter writes the raw ID
+    # token JWT into this cookie on successful login; the JWT filter
+    # then validates it on every subsequent request.
+    cookieNames:
+      idToken: IdToken
+      accessToken: AccessToken
     logoutPath: /logout
     scopes:
       - openid
@@ -99,6 +108,16 @@ spec:
         issuer: https://accounts.google.com
         remoteJWKS:
           uri: https://www.googleapis.com/oauth2/v3/certs
+        # Read the ID token from the OIDC IdToken cookie, NOT the
+        # default Authorization header (which OIDC never populates for
+        # browser sessions -- it stores tokens in cookies). Without
+        # this, every request after a successful login fails with
+        # `jwt_authn_access_denied{Jwt_is_missing}` because the JWT
+        # filter is looking in the wrong place. See `cookieNames`
+        # above for the pinned name.
+        extractFrom:
+          cookies:
+            - IdToken
         # Surface the email to upstream apps for logging / per-user
         # behaviour. Apps that want to trust this header MUST also
         # ensure they only accept it from the Gateway (e.g. by
