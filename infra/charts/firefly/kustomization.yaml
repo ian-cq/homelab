@@ -9,10 +9,11 @@
 #
 # OAuth is provided at the gateway layer via the `public-oidc`
 # SecurityPolicy in the gateway namespace; any HTTPRoute attached to the
-# `public` Gateway is gated by Google OIDC + the email allowlist. We
-# also leave Firefly's built-in auth in place as a second factor
-# (followup: switch to remote_user_guard + AUTHENTICATION_GUARD_HEADER
-# = HTTP_X_AUTH_EMAIL once a first user has been bootstrapped).
+# `public` Gateway is gated by Google OIDC + the email allowlist. The
+# Firefly app is then run with AUTHENTICATION_GUARD=remote_user_guard so
+# Firefly trusts the `x-auth-email` header the SecurityPolicy injects
+# from the validated JWT - no second login form. See firefly.yaml
+# (ConfigMap firefly-app) for the guard config.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 

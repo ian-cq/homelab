@@ -14,6 +14,15 @@
 #
 # APP_URL must match the public origin exactly (Firefly uses it for
 # absolute URLs in emails / OAuth redirects).
+#
+# AUTHENTICATION_GUARD=remote_user_guard tells Firefly to trust the
+# `x-auth-email` header that envoy injects from the validated Google
+# JWT (see gateway/securitypolicy.yaml: claimToHeaders: email ->
+# x-auth-email). Firefly's own login form is bypassed - the first time
+# an allowlisted email is presented, Firefly auto-provisions the user.
+# Because the pod is not exposed outside the OIDC-gated Gateway, no
+# unauthenticated path to the app exists; spoofing x-auth-email
+# requires already being past the SecurityPolicy's JWT verification.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -43,6 +52,9 @@ data:
   SITE_OWNER: "work@quanianitis.com"
   TZ: "Asia/Singapore"
   TRUSTED_PROXIES: "**"
+  AUTHENTICATION_GUARD: "remote_user_guard"
+  AUTHENTICATION_GUARD_HEADER: "HTTP_X_AUTH_EMAIL"
+  AUTHENTICATION_GUARD_EMAIL: "HTTP_X_AUTH_EMAIL"
   LOG_CHANNEL: "stack"
   APP_LOG_LEVEL: "notice"
   AUDIT_LOG_LEVEL: "emergency"
