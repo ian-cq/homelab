@@ -8,3 +8,5 @@ resources:
   - gateway.yaml
   - gatewayclass.yaml
   - securitypolicy.yaml
+  - securitypolicy-inbox.yaml
+  - api-key-secret.yaml

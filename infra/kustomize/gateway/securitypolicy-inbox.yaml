@@ -1,0 +1,42 @@
+# Listener-scoped SecurityPolicy for the `inbox` listener of
+# Gateway `public`. Enforces X-API-Key auth at L7 for every route
+# attached via `parentRefs[].sectionName: inbox`.
+#
+# Specificity: this SP attaches to a Gateway listener (section), which
+# beats the gateway-wide `public-oidc` SP in EG's precedence
+# (listener > gateway). public-oidc continues to apply to the `https`
+# listener; on `inbox` it's overridden and gets a
+# `PolicyConditionOverridden: true` status pointing to [inbox] - that
+# is expected, see internal/gatewayapi/securitypolicy.go in EG source
+# (getOverriddenTargetsMessageForGateway).
+#
+# Sanitize strips the X-API-Key header before forwarding, so the
+# upstream pod never logs the credential. forwardClientIDHeader exposes
+# the matched Secret-data key (e.g. `cf-worker`) to the upstream as
+# `x-client-id` for audit logging.
+#
+# Defence-in-depth: any consumer of this listener is free to add its
+# own per-pod authn on top (e.g. duitku-webhook enforces HMAC-SHA256
+# over the body for replay protection). The edge api-key auth is the
+# minimum bar; the pod can choose to require more.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: inbox-apikey
+  namespace: gateway
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      sectionName: inbox
+  apiKeyAuth:
+    credentialRefs:
+      - group: ""
+        kind: Secret
+        name: gateway-api-key
+    extractFrom:
+      - headers:
+          - X-API-Key
+    forwardClientIDHeader: x-client-id
+    sanitize: true

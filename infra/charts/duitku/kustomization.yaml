@@ -13,11 +13,12 @@
 #   - duitku-prune CronJob: deletes processed/ files older than
 #     --retention-days.
 #
-# OAuth at the gateway is bypassed for this specific HTTPRoute via a
-# route-level SecurityPolicy with no auth (HMAC inside the receiver is
-# the actual authn). The Cloudflare Email Worker is NOT part of this
-# chart - it's deployed via `wrangler deploy` from the duitku repo's
-# worker/ subdirectory by the human.
+# Edge auth (X-API-Key) lives at the gateway: this chart's HTTPRoute
+# attaches to the Gateway `public` listener `inbox` (in `gateway` ns),
+# which has its own listener-scoped SecurityPolicy + shared Secret. See
+# infra/kustomize/gateway/{securitypolicy-inbox,api-key-secret}.yaml.
+# The duitku-webhook binary additionally enforces HMAC over the body
+# for replay protection - api-key is necessary but not sufficient.
 #
 # Image: docker.io/library/duitku:0.2.0 - built locally with nerdctl +
 # buildkit and loaded into the k3s containerd k8s.io namespace. As long
@@ -29,11 +30,9 @@ kind: Kustomization
 
 resources:
   - secret.yaml
-  - api-key-secret.yaml
   - configmaps.yaml
   - pvc.yaml
   - webhook.yaml
   - httproute.yaml
-  - securitypolicy.yaml
   - sweep.yaml
   - prune.yaml

@@ -1,15 +1,23 @@
 # Gateway-API HTTPRoute for the duitku Cloudflare-Worker webhook.
 #
-# Public hostname `duitku-inbox.62a.quanianitis.com` is wildcard-covered
-# by the `public` Gateway's existing wildcard listener and TLS cert
-# (`*.62a.quanianitis.com`). The route exposes ONLY /cf-inbox and
-# /healthz; everything else 404s at envoy.
+# Attaches to the `inbox` listener of Gateway `public` (in `gateway`
+# ns) via parentRefs.sectionName, which means this route inherits the
+# listener-scoped `inbox-apikey` SecurityPolicy instead of the
+# gateway-wide `public-oidc` (OAuth). The Cloudflare Email Worker
+# presents X-API-Key; OIDC would block it.
 #
-# IMPORTANT: this route DOES NOT inherit `public-oidc` (OAuth) from the
-# Gateway because we attach a route-level SecurityPolicy
-# (`duitku-inbox-noauth`, see securitypolicy.yaml) that overrides
-# auth for this specific HTTPRoute. The actual authn is HMAC inside
-# the duitku-webhook binary - OIDC would block the Cloudflare Worker.
+# Hostname `inbox.62a.quanianitis.com` matches the inbox listener
+# exactly. The wildcard `https` listener (`*.62a.quanianitis.com`)
+# also covers this hostname, but per Gateway-API more-specific-wins,
+# requests dispatch to `inbox` first. The sectionName attachment also
+# ensures this route only appears under the inbox filter chain.
+#
+# TLS is the shared wildcard cert on the gateway side; this route
+# exposes only /cf-inbox and /healthz - everything else 404s at envoy.
+#
+# Defence-in-depth: the duitku-webhook binary additionally enforces
+# HMAC-SHA256 over (X-Duitku-Timestamp || "." || body) for replay
+# protection. Edge api-key auth is necessary but not sufficient.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -23,8 +31,9 @@ spec:
       kind: Gateway
       name: public
       namespace: gateway
+      sectionName: inbox
   hostnames:
-    - duitku-inbox.62a.quanianitis.com
+    - inbox.62a.quanianitis.com
   rules:
     - matches:
         - path:
