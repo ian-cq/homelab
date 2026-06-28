@@ -36,7 +36,7 @@ spec:
             fsGroup: 65532
           containers:
             - name: sweep
-              image: docker.io/library/duitku:0.1.0
+              image: docker.io/library/duitku:0.2.0
               imagePullPolicy: Never
               args:
                 - sweep
@@ -45,7 +45,7 @@ spec:
                 - --accounts-file=/etc/duitku/accounts.yaml
               env:
                 - name: DUITKU_LOG_LEVEL
-                  value: info
+                  value: INFO
                 - name: FIREFLY_PAT
                   valueFrom:
                     secretKeyRef:
@@ -63,10 +63,15 @@ spec:
                   mountPath: /etc/duitku/accounts.yaml
                   subPath: accounts.yaml
                   readOnly: true
+                # Python's pdfplumber/pikepdf (phase 1) and Starlette
+                # both spool to /tmp under load. readOnlyRootFs is on,
+                # so /tmp needs an emptyDir.
+                - name: tmp
+                  mountPath: /tmp
               resources:
                 requests:
                   cpu: 50m
-                  memory: 64Mi
+                  memory: 128Mi
                 limits:
                   cpu: 1000m
                   memory: 512Mi
@@ -85,3 +90,6 @@ spec:
             - name: accounts
               configMap:
                 name: duitku-accounts
+            - name: tmp
+              emptyDir:
+                sizeLimit: 256Mi

@@ -34,7 +34,7 @@ spec:
             fsGroup: 65532
           containers:
             - name: prune
-              image: docker.io/library/duitku:0.1.0
+              image: docker.io/library/duitku:0.2.0
               imagePullPolicy: Never
               args:
                 - prune
@@ -42,17 +42,18 @@ spec:
                 - --retention-days=30
               env:
                 - name: DUITKU_LOG_LEVEL
-                  value: info
+                  value: INFO
               volumeMounts:
                 - name: landing
                   mountPath: /landing
               resources:
+                # Python interp + typer baseline is ~50 MB resident.
                 requests:
                   cpu: 25m
-                  memory: 32Mi
+                  memory: 96Mi
                 limits:
                   cpu: 200m
-                  memory: 128Mi
+                  memory: 256Mi
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

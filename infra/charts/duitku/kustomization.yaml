@@ -19,7 +19,7 @@
 # chart - it's deployed via `wrangler deploy` from the duitku repo's
 # worker/ subdirectory by the human.
 #
-# Image: docker.io/library/duitku:0.1.0 - built locally with nerdctl +
+# Image: docker.io/library/duitku:0.2.0 - built locally with nerdctl +
 # buildkit and loaded into the k3s containerd k8s.io namespace. As long
 # as the cluster is single-node, no registry is needed
 # (imagePullPolicy: Never). Migrating to ghcr.io/ian-cq/duitku once a

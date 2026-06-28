@@ -8,9 +8,15 @@
 # alongside.
 #
 # Image is local-only (imagePullPolicy: Never): built by the operator
-# with nerdctl + buildkit and loaded into k3s containerd's k8s.io
-# namespace. Single-node cluster only - if/when the cluster scales out,
-# migrate to ghcr.io/ian-cq/duitku and remove `Never`.
+# with buildkit and loaded into k3s containerd's k8s.io namespace via
+# `k3s ctr images import`. Single-node cluster only - if/when the
+# cluster scales out, migrate to ghcr.io/ian-cq/duitku and remove
+# `Never`.
+#
+# Implementation: Python 3.13 + FastAPI + uvicorn (see github.com/
+# ian-cq/duitku). The Python choice is documented in §2.6 of
+# ~/Documents/docs/duitku.md - PDF parsing (phase 1) needs Python's
+# pdfplumber/pikepdf, so the whole pipeline is Python end-to-end.
 apiVersion: v1
 kind: Service
 metadata:
@@ -54,24 +60,26 @@ spec:
         app.kubernetes.io/component: webhook
     spec:
       securityContext:
-        # distroless nonroot user is uid 65532. fsGroup so the
-        # longhorn-mounted /landing is writable by the binary.
+        # Image's nonroot user is uid 65532, matching what the previous
+        # Go (distroless:nonroot) image used so /landing PVC ownership
+        # carries across the rebuild. fsGroup makes the longhorn-
+        # mounted /landing writable by the process.
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
         fsGroup: 65532
       containers:
         - name: webhook
-          image: docker.io/library/duitku:0.1.0
+          image: docker.io/library/duitku:0.2.0
           imagePullPolicy: Never
           args:
             - serve
-            - --addr=:8080
+            - --addr=0.0.0.0:8080
             - --landing-dir=/landing
             - --hmac-key-file=/etc/duitku/secret/WEBHOOK_HMAC_KEY
           env:
             - name: DUITKU_LOG_LEVEL
-              value: info
+              value: INFO
           ports:
             - name: http
               containerPort: 8080
@@ -82,27 +90,37 @@ spec:
             - name: secret
               mountPath: /etc/duitku/secret
               readOnly: true
+            # Starlette's multipart parser spools attachments > 1 MiB
+            # into a SpooledTemporaryFile under /tmp. readOnlyRootFs is
+            # on, so /tmp needs an emptyDir.
+            - name: tmp
+              mountPath: /tmp
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 2
+            initialDelaySeconds: 3
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 5
           resources:
+            # Python+FastAPI+uvicorn at idle is ~80 MB resident; under
+            # multipart load with a 25 MiB attachment spooled the RSS
+            # bumps to ~150 MB. Headroom kept generous because OOM
+            # during a Worker POST means the Worker retries and we
+            # write duplicate files (idempotency saves us, but noisy).
             requests:
               cpu: 50m
-              memory: 64Mi
+              memory: 128Mi
             limits:
               cpu: 500m
-              memory: 256Mi
+              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -118,3 +136,6 @@ spec:
             items:
               - key: WEBHOOK_HMAC_KEY
                 path: WEBHOOK_HMAC_KEY
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
