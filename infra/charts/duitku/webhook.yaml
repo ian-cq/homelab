@@ -70,13 +70,12 @@ spec:
         fsGroup: 65532
       containers:
         - name: webhook
-          image: docker.io/library/duitku:0.2.0
+          image: docker.io/library/duitku:0.3.0
           imagePullPolicy: Never
           args:
             - serve
             - --addr=0.0.0.0:8080
             - --landing-dir=/landing
-            - --hmac-key-file=/etc/duitku/secret/WEBHOOK_HMAC_KEY
           env:
             - name: DUITKU_LOG_LEVEL
               value: INFO
@@ -87,9 +86,6 @@ spec:
           volumeMounts:
             - name: landing
               mountPath: /landing
-            - name: secret
-              mountPath: /etc/duitku/secret
-              readOnly: true
             # Starlette's multipart parser spools attachments > 1 MiB
             # into a SpooledTemporaryFile under /tmp. readOnlyRootFs is
             # on, so /tmp needs an emptyDir.
@@ -130,12 +126,6 @@ spec:
         - name: landing
           persistentVolumeClaim:
             claimName: duitku-landing
-        - name: secret
-          secret:
-            secretName: duitku
-            items:
-              - key: WEBHOOK_HMAC_KEY
-                path: WEBHOOK_HMAC_KEY
         - name: tmp
           emptyDir:
             sizeLimit: 64Mi
