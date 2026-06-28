@@ -1,35 +1,58 @@
-# Statement importer for Firefly III
+# duitku — Malaysian bank statement parser
 
 > Design doc. Status: **proposed**, not implemented.
 > Owner: Ian. Last updated: 2026-06-28.
 
-Pull bank statements from Maybank (MY), UOB, and Ryt Bank, normalise the
-transactions, and POST them into the self-hosted Firefly III instance
-at `https://finance.62a.quanianitis.com`.
+`duitku` is a parser + transaction normaliser for Malaysian retail bank
+statements. It eats PDF and CSV statements from Maybank, UOB, and Ryt
+Bank, emits a canonical transaction stream, and ships a small set of
+emitters that push that stream into downstream personal-finance tools.
 
----
+The first emitter target — and the immediate reason this exists — is
+the homelab's self-hosted Firefly III at
+`https://finance.62a.quanianitis.com`. But `duitku` is deliberately
+factored so the parsers and the normaliser don't know that. Future
+emitters can target Actual Budget, GnuCash, Lunch Money, or plain JSON
+on stdout with no changes to the bank-specific code.
+
+## 0. About the name
+
+*duitku* = *duit* (Malay: money, cash) + *-ku* (1st-person possessive
+suffix). Literally "my money". Short, unambiguous, distinctly
+Malaysian, and reads naturally in both Malay and English contexts:
+*"duitku ke mana?"* ("where did my money go?") is exactly the
+question this tool answers.
 
 ## 1. Why this exists
 
-Firefly III only knows about transactions that someone tells it about.
-Manually re-keying a month of statements is the path of least
-enjoyment, so the homelab gets a small service whose only job is to
-turn statements into Firefly transactions.
+Firefly III (and every other personal-finance tool) only knows about
+transactions that someone tells it about. Manually re-keying a month
+of statements is the path of least enjoyment. Existing open-source
+importers target US and EU banks; the Malaysian retail-banking world
+is documented mostly via blog posts, half-finished gists, and reverse-
+engineered PDF layouts.
 
-The three target banks were chosen by Ian:
+`duitku` is the bit Ian needs for himself, packaged so the rest of the
+Malaysian self-hosting / personal-finance community doesn't have to
+reinvent the same three parsers.
+
+The three target banks were picked by what Ian actually uses:
 
 - **Maybank** (Malayan Banking Berhad, MY) - primary daily-driver
 - **UOB** (United Overseas Bank, MY/SG) - secondary
 - **Ryt Bank** (YTL-SEA digital bank, MY) - new digital account
 
----
+Other Malaysian banks (CIMB, Public Bank, HLB, RHB, AmBank, BSN…)
+are out of scope for the first release but are explicit target
+extensions; the parser interface is shaped so adding `parsers/cimb/`
+is a self-contained PR.
 
 ## 2. The painful constraint: no consumer-grade bank APIs
 
 Open Banking is effectively absent for retail customers in Malaysia
-and Singapore. None of the three banks publishes a stable, public,
-self-service REST API that an individual can authenticate against to
-pull their own transactions.
+and Singapore. None of the three target banks publishes a stable,
+public, self-service REST API that an individual can authenticate
+against to pull their own transactions.
 
 That leaves the following input shapes we can actually rely on:
 
@@ -44,9 +67,57 @@ of scope - it breaks every time the bank ships a redesign, almost
 certainly violates ToS, and demands a headless browser pod we'd then
 have to babysit for security updates.
 
-This means the importer is a **batch, pull-from-files** service, not a
+This means `duitku` is a **batch, pull-from-files** tool, not a
 real-time bank-feed integration. That's the most reversible shape and
 matches what the banks will actually give us.
+
+## 2.5 Project shape: library vs. homelab deployment
+
+`duitku` is two artefacts:
+
+1. **`duitku` (the library + CLI).** Open-source, framework-agnostic,
+   intended to live in its own repo (`github.com/ian-cq/duitku`,
+   eventually MIT/Apache-2.0). Knows about Malaysian banks; knows
+   nothing about Firefly III, k8s, SMTP, or this homelab. Anyone
+   running any personal-finance tool on any OS can pip-install it.
+
+   ```
+   duitku/
+     parsers/
+       maybank/
+       uob/
+       ryt/
+     normaliser/        # RawTransaction -> canonical Transaction
+     emitters/
+       json/            # emit canonical JSON to stdout
+       csv/             # emit canonical CSV
+       firefly/         # POST to Firefly III /api/v1/transactions
+       actual/          # (future) Actual Budget API
+     cli.py             # `duitku parse stmt.pdf --bank maybank --emit firefly --to https://...`
+   ```
+
+2. **The homelab deployment (this doc, sections 3-10).** A specific
+   way of running `duitku` inside Ian's k3s cluster, fed by inbound
+   SMTP, posting to the local Firefly III instance. Lives under
+   `infra/charts/duitku/` in the homelab repo. Not portable, not
+   open-source, just one of N possible operating environments for
+   the `duitku` library.
+
+This split is load-bearing for three reasons:
+- It keeps bank-parser fixes (the maintenance burden everyone shares)
+  in a public repo where other Malaysians can contribute and benefit.
+- It keeps homelab-specific opinions (SMTP, OIDC, FRP, longhorn) out
+  of the public repo, so a windows-laptop user can `pip install duitku`
+  and just run the CLI.
+- It makes the homelab deployment's Argo Application a thin wrapper
+  around a versioned `duitku` container image, not a code-and-config
+  tangle.
+
+The rest of this doc is the **homelab deployment**. The library
+design (parser interfaces, normaliser schema, emitter contract) is
+sketched here because the homelab needs all three to exist, but the
+canonical home of that design will be `duitku`'s own README once the
+repo is real.
 
 ---
 
@@ -54,9 +125,9 @@ matches what the banks will actually give us.
 
 ```
 +--------------------+   email to                +---------------------+
-|  user (Ian)        |   insert@quanianitis.com  |  inbound SMTP       |
-|  forwards bank     | ------------------------> |  receiver pod       |
-|  statement email   |                           |  (aiosmtpd)         |
+|  user (Ian)        |   insert@mail             |  inbound SMTP       |
+|  forwards bank     |   .quanianitis.com        |  receiver pod       |
+|  statement email   | ------------------------> |  (aiosmtpd)         |
 +--------------------+                           +----------+----------+
                                                             |
                                                             | write attachments
@@ -106,10 +177,10 @@ The pipeline is a five-stage transform: **receive -> parse -> normalise
 
 ## 4. Component design
 
-### 4.1 Ingestion: inbound SMTP at `insert@quanianitis.com`
+### 4.1 Ingestion: inbound SMTP at `insert@mail.quanianitis.com`
 
 The **sole** input path is email. Ian forwards (or auto-forwards) the
-bank's statement email to `insert@quanianitis.com`, and the homelab
+bank's statement email to `insert@mail.quanianitis.com`, and the homelab
 receives it via its own SMTP listener.
 
 #### Why SMTP, not HTTP upload or IMAP polling
@@ -144,10 +215,12 @@ receives it via its own SMTP listener.
 #### How a message becomes a parsed transaction
 
 1. Sender (Ian's mail account, or a Gmail forwarding rule) DELIVERs a
-   message to `insert@quanianitis.com`.
-2. DNS MX record for `quanianitis.com` (or a delegated subdomain - see
-   open questions) routes the connection to the homelab's public IP
-   via FRP / direct port 25 forward.
+   message to `insert@mail.quanianitis.com`.
+2. DNS MX record for `mail.quanianitis.com` (the delegated subdomain;
+   see section 9 for the layout decision and the reasoning against
+   touching the apex) routes the connection to the VPS public IP
+   `103.40.207.125`; FRP TCP-forwards `:25` to the SMTP pod's
+   pinned-ClusterIP Service.
 3. The SMTP listener accepts, runs the sender-allowlist check (see
    below), persists the raw `.eml` to
    `/landing/_raw/{YYYY-MM-DD}-{message-id}.eml` for audit, then
@@ -165,9 +238,9 @@ receives it via its own SMTP listener.
 
 #### Abuse model and sender allowlist
 
-`insert@quanianitis.com` is a guessable local-part on a domain with
-public WHOIS. We must assume strangers will try to send to it. Three
-reinforcing controls:
+`insert@mail.quanianitis.com` is a guessable local-part on a domain
+that publishes WHOIS data via its registrar. We must assume strangers
+will eventually try to send to it. Three reinforcing controls:
 
 1. **Sender allowlist.** A Secret-mounted list of permitted envelope
    `MAIL FROM` addresses (Ian's primary mail, plus the banks' known
@@ -297,12 +370,16 @@ sha256("{bank}|{account_id}|{date:YYYY-MM-DD}|{amount:0.2f}|{kind}|{raw_descript
 The hash is over `raw_description` (not the cleaned one) so reformatting
 the cleaner doesn't invalidate the dedup key for historical imports.
 
-### 4.5 Firefly client
+### 4.5 Emitter: Firefly III client
+
+The first concrete emitter implementation. Other emitters (Actual,
+GnuCash, plain JSON) follow the same shape: receive canonical
+`Transaction` objects, push them somewhere, idempotently.
 
 Thin wrapper around `POST /api/v1/transactions`. Auth via a Firefly
 **Personal Access Token** (issued from the Firefly UI under Profile ->
 OAuth -> Personal Access Tokens), stored as a k8s Secret
-`firefly-importer-token`.
+`duitku-firefly-token`.
 
 The token is a JWT; Firefly does not currently expose a rotation API,
 so rotation = create a new PAT, update the Secret, roll the pod, then
@@ -354,22 +431,22 @@ importer.
 
 ## 5. Deployment shape
 
-Lives under `infra/charts/firefly-importer/` alongside `firefly/`.
+Lives under `infra/charts/duitku/` alongside `firefly/`.
 
 Resources:
 
-- **Namespace** `firefly-importer` (separate from `firefly` so an
+- **Namespace** `duitku` (separate from `firefly` so an
   importer crash never threatens the data store; CrashLoopBackOff
   noise is localised).
 - **PVC** `landing` (longhorn, 5 Gi) mounted at `/landing`.
-- **Deployment** `firefly-importer-smtp` running the `aiosmtpd`
+- **Deployment** `duitku-smtp` running the `aiosmtpd`
   listener. 1 replica, `Recreate` strategy. Mounts the `landing` PVC
   and the wildcard TLS Secret. Exposes container port 25.
   Liveness: TCP probe on 25. Readiness: same.
-- **Service** `firefly-importer-smtp` of type `LoadBalancer` (or
+- **Service** `duitku-smtp` of type `LoadBalancer` (or
   `ClusterIP` fronted by a Gateway-API `TCPRoute` if cilium / Envoy
   Gateway is configured for TCP - see open questions). Port 25 only.
-- **CronJob** `firefly-importer-sweep` runs every 15 minutes,
+- **CronJob** `duitku-sweep` runs every 15 minutes,
   `command: ["python", "-m", "importer.sweep"]`. It scans
   `/landing/_unsorted/inbox/` (to classify late) and
   `/landing/{bank}/inbox/` (to parse + post), and moves files to
@@ -380,32 +457,35 @@ Resources:
   / `state.db`. RWO holds because the Deployment uses Recreate and
   the CronJob has `concurrencyPolicy: Forbid`; node-affinity is not
   required because longhorn handles cross-node RWO via its CSI.
-- **CronJob** `firefly-importer-prune-raw` runs daily, deletes `*.eml`
+- **CronJob** `duitku-prune-raw` runs daily, deletes `*.eml`
   in `_raw/` older than 90 days.
-- **Secret** `firefly-importer` holding `FIREFLY_PAT`,
-  `MAYBANK_PDF_PASSWORD`, `UOB_PDF_PASSWORD`, `RYT_PDF_PASSWORD`,
-  and `SENDER_ALLOWLIST` (newline-separated envelope-from addresses).
+- **Secret** `duitku` holding `FIREFLY_PAT` (the Firefly III PAT for
+  the firefly emitter), `MAYBANK_PDF_PASSWORD`, `UOB_PDF_PASSWORD`,
+  `RYT_PDF_PASSWORD`, and `SENDER_ALLOWLIST` (newline-separated
+  envelope-from addresses).
   Inline initially, eventually ExternalSecret pointing at 1Password
   (same followup as the Firefly and Plane stacks).
-- **ConfigMap** `firefly-importer-accounts` holding `accounts.yaml`
+- **ConfigMap** `duitku-accounts` holding `accounts.yaml`
   (the bank-account-id -> Firefly-asset-account-name lookup).
-  Mounted at `/etc/firefly-importer/accounts.yaml`. Updating this is
+  Mounted at `/etc/duitku/accounts.yaml`. Updating this is
   the routine maintenance Ian will actually do.
 
-There is **no HTTPRoute and no ingress for the importer**. The service
+There is **no HTTPRoute and no ingress for `duitku`**. The service
 is reachable from the internet only via SMTP on port 25. Health and
 metrics are scraped in-cluster, never exposed externally.
 
 Argo Application registered the same way as `firefly`:
-`deployments/applications/services/firefly-importer.yaml` ->
-`infra/charts/firefly-importer/`, included in the services
+`deployments/applications/services/duitku.yaml` ->
+`infra/charts/duitku/`, included in the services
 kustomization.
 
 ---
 
-## 6. Firefly III prep (one-time)
+## 6. Firefly III prep (one-time, for the firefly emitter)
 
-Before the importer runs, Ian needs to:
+These steps are specific to the Firefly emitter. A future Actual /
+GnuCash emitter would have its own analogous one-time setup. Before
+the firefly emitter runs, Ian needs to:
 
 1. Log into Firefly at https://finance.62a.quanianitis.com (Google
    OIDC will provision the first user).
@@ -419,7 +499,7 @@ Before the importer runs, Ian needs to:
    `GRAB*` then category = Transport") so `apply_rules: true` does
    useful work from day one.
 
-These steps are **not** in the importer's responsibility - importing
+These steps are **not** in `duitku`'s responsibility - importing
 into Firefly accounts that don't exist would silently create them with
 wrong currencies / types.
 
@@ -432,10 +512,10 @@ can actually use.
 
 | Phase | Scope | Deliverable |
 |-------|-------|-------------|
-| 0 | This doc, agreed | `docs/firefly-statement-importer.md` (this file) |
+| 0 | This doc, agreed | `docs/duitku.md` (this file) |
 | 1 | Maybank PDF only, CLI tool, no k8s, no SMTP | Local Python script Ian runs by hand on a downloaded statement; first month of Maybank data lands in Firefly |
 | 2 | Add Maybank CSV + UOB PDF + UOB CSV parsers | Same CLI, more parsers; parsers are now proven against real data |
-| 3 | Stand up the SMTP receiver: MX DNS record, port 25 reachability, `aiosmtpd` Deployment + Service, sender allowlist + SPF/DMARC enforcement | Forwarding a bank statement email to `insert@quanianitis.com` lands the attachment in `/landing/{bank}/inbox/` |
+| 3 | Stand up the SMTP receiver: DNS for `mail.quanianitis.com`, open port 25 on the VPS firewall, FRP `:25` proxy to a pinned-ClusterIP SMTP Service, `aiosmtpd` Deployment, sender allowlist + SPF/DMARC enforcement | Forwarding a bank statement email to `insert@mail.quanianitis.com` lands the attachment in `/landing/{bank}/inbox/` |
 | 4 | Wire the CronJob sweep to the SMTP-fed inboxes; full pipeline ingest -> Firefly | Hands-off monthly imports for Maybank + UOB |
 | 5 | Add Ryt parser once a real Ryt PDF is available | Three banks supported |
 | 6 | Move Secrets to 1Password + external-secrets | Token rotation is no longer a `kubectl edit` operation |
@@ -485,30 +565,53 @@ stable on a month of real data.
 
 ## 9. Open questions / decisions deferred
 
-- **MX record + port-25 reachability.** `insert@quanianitis.com`
-  requires:
-    a. An MX record for `quanianitis.com` (or whichever domain the
-       address resolves under) pointing at the homelab. Today
-       `quanianitis.com` may already have MX records pointing at a
-       provider (e.g. Google Workspace); switching the apex MX is a
-       big-blast-radius change. Likely cleanest: delegate a
-       subdomain like `mail.quanianitis.com`, MX -> homelab, and the
-       canonical address becomes `insert@mail.quanianitis.com` with
-       Ian's main mail forwarding to it. **Decision deferred to
-       phase 3.**
-    b. Port 25 inbound reachable from the public internet. The
-       homelab currently uses FRP for external access; FRP supports
-       arbitrary TCP, so a new `frpc` proxy for `:25` should work.
-       Many residential ISPs block outbound 25, which prevents
-       *sending*, not *receiving*; receiving usually works. Confirm
-       with a `telnet <homelab-public-ip> 25` from outside before
-       committing the SMTP manifests.
-- **TLS on the SMTP listener.** STARTTLS is mandatory for any
-  modern mail flow. Use the same wildcard cert if we go with
-  `mail.62a.quanianitis.com`; otherwise issue a dedicated cert via
-  cert-manager for `mail.quanianitis.com`. Plain port 25 without
-  TLS is acceptable for the SMTP handshake itself, but DMARC-aware
-  senders will downgrade or refuse without it.
+- **DNS layout: subdomain delegation, `insert@mail.quanianitis.com`.**
+  Investigated on 2026-06-28. Apex `quanianitis.com` already publishes
+  MX records pointing at Cloudflare Email Routing
+  (`route1/2/3.mx.cloudflare.net`); the TXT/SPF mixes Cloudflare and
+  Google. Flipping the apex MX would silently break unrelated
+  personal mail.
+
+  Decision: **delegate `mail.quanianitis.com`** to the homelab.
+  - `A    mail.quanianitis.com   103.40.207.125`   (DNS-only on
+    Cloudflare; Cloudflare does not proxy SMTP)
+  - `MX   mail.quanianitis.com   10 mail.quanianitis.com.`
+  - `TXT  mail.quanianitis.com   "v=spf1 ip4:103.40.207.125 -all"`
+    (we receive only; -all defends against forged outbound)
+  - `TXT  _dmarc.mail.quanianitis.com
+        "v=DMARC1; p=reject; rua=mailto:insert@mail.quanianitis.com"`
+
+  The canonical address Ian forwards to becomes
+  `insert@mail.quanianitis.com`. Apex mail is untouched.
+
+- **Port 25 inbound on the VPS.** Probed on 2026-06-28 from inside
+  the homelab: `nc -zv 103.40.207.125 25` returned **connection
+  timed out** (silently dropped, not RST). Cause is either VPS-side
+  iptables/ufw or IPServerOne's (AS45352) network edge. Distinguishing
+  requires an interactive SSH session to the VPS, which the
+  unattended agent context does not have.
+
+  Plan:
+    a. Open inbound 25 on the VPS firewall first (`iptables -A INPUT
+       -p tcp --dport 25 -j ACCEPT`, persist via the same mechanism
+       the existing `:443` rule uses). Cheap and reversible.
+    b. Re-probe externally. If still timing out, file a ticket with
+       IPServerOne to lift any network-edge filter on inbound 25.
+    c. Mirror the existing `:443 -> 10.43.201.212` FRP proxy entry:
+       add a new `frpc.toml` TCP proxy `:25 -> <smtp service
+       ClusterIP>:25`. The SMTP Service must use a **pinned
+       ClusterIP** like `cilium-gateway-public` does (see
+       `frps/frp-client/README.md` for the operator-scale-down dance
+       used to pin ClusterIPs).
+
+  Until (a) and (b) are confirmed, phase 3 cannot ship.
+
+- **STARTTLS cert.** With the subdomain decision above, cert-manager
+  mints a dedicated cert for `mail.quanianitis.com` via the same
+  Let's Encrypt issuer the rest of the cluster uses. (Reusing the
+  `*.62a.quanianitis.com` wildcard would force the public hostname to
+  contain `62a`, which leaks "this is the homelab" in MX records -
+  not a security issue but mildly ugly.)
 - **Backscatter and bounces.** The receiver must **never** generate a
   bounce after accepting a message. Rejections happen at the SMTP
   layer (5xx during `RCPT TO` or `DATA`); accepted-then-discarded
@@ -543,9 +646,9 @@ stable on a month of real data.
 ## 10. Followups for future agents / Ian
 
 - File path **does not exist yet on disk** - this doc is the plan,
-  nothing under `infra/charts/firefly-importer/` is implemented.
+  nothing under `infra/charts/duitku/` is implemented.
 - When phase 1 starts: scaffold the CLI in a separate repo (or
-  `tools/firefly-importer/` in the homelab repo) before any k8s
+  `tools/duitku/` in the homelab repo) before any k8s
   manifests. The k8s side is the easy part.
 - The SMTP receiver is the only piece that *takes input from outside
   the homelab*. The raw `.eml` retention under `/landing/_raw/`
