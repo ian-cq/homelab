@@ -49,6 +49,9 @@ infra/kustomize/oauth2-proxy/charts
 infra/kustomize/kubernetes-dashboard/charts
 infra/kustomize/nvidia-device-plugin/charts
 infra/charts/plane/charts
+# Catch-all for any kustomize dir that uses --enable-helm and untars charts
+# into the working tree on build.
+infra/kustomize/*/charts/
 
 # FRP secrets
 *.env
