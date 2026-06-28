@@ -8,5 +8,3 @@ resources:
   - gateway.yaml
   - gatewayclass.yaml
   - securitypolicy.yaml
-  - api-key-secret.yaml
-  - api-key-referencegrant.yaml

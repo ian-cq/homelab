@@ -29,6 +29,7 @@ kind: Kustomization
 
 resources:
   - secret.yaml
+  - api-key-secret.yaml
   - configmaps.yaml
   - pvc.yaml
   - webhook.yaml
