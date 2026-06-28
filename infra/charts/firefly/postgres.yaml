@@ -1,0 +1,114 @@
+# Postgres backing store for Firefly III.
+#
+# Single-replica, longhorn-backed. Pinned to postgres:16-alpine because
+# Firefly III is tested against PG 13-16 (PG17 was not officially
+# supported as of Firefly 6.6.x). Storage class is pinned to longhorn
+# explicitly because the cluster has two default StorageClasses
+# (local-path and longhorn) and PVC binding is otherwise ambiguous -
+# same trap documented in infra/charts/plane/values.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: firefly-postgres-data
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly-postgres
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firefly-postgres
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: firefly-iii
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: firefly-iii
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16.4-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: firefly-postgres
+          env:
+            # Default PGDATA is /var/lib/postgresql/data which is also the
+            # mountpoint; postgres refuses to init there because mount
+            # creates a non-empty lost+found. Subdir avoids that.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - firefly
+                - -d
+                - firefly
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - firefly
+                - -d
+                - firefly
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: firefly-postgres-data

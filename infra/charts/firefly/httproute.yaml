@@ -1,0 +1,29 @@
+# Gateway-API HTTPRoute for Firefly III.
+#
+# Attaches to the cluster-wide `public` Gateway in the gateway namespace.
+# OAuth (Google OIDC) is enforced by the `public-oidc` SecurityPolicy
+# bound to that Gateway, so this route inherits the email allowlist
+# without any per-route configuration. See
+# infra/kustomize/gateway/securitypolicy.yaml.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: firefly
+  labels:
+    app.kubernetes.io/name: firefly-iii
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      namespace: gateway
+  hostnames:
+    - finance.62a.quanianitis.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: firefly
+          port: 8080

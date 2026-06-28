@@ -8,3 +8,4 @@ resources:
   - obsidian-livesync.yaml
   - cloudflared.yaml
   - plane.yaml
+  - firefly.yaml

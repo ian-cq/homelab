@@ -1,0 +1,24 @@
+# Firefly III (personal finance manager).
+#
+# Manifest-based deployment. Firefly III does not publish a first-party
+# Helm chart; the available community charts on Artifact Hub are either
+# stale (last update 2022-2023) or single-maintainer hobby repos. Given
+# how small the workload is (one stateless app + one Postgres + one
+# CronJob), plain manifests are lower risk than vendoring a third-party
+# chart we'd then have to audit on every bump.
+#
+# OAuth is provided at the gateway layer via the `public-oidc`
+# SecurityPolicy in the gateway namespace; any HTTPRoute attached to the
+# `public` Gateway is gated by Google OIDC + the email allowlist. We
+# also leave Firefly's built-in auth in place as a second factor
+# (followup: switch to remote_user_guard + AUTHENTICATION_GUARD_HEADER
+# = HTTP_X_AUTH_EMAIL once a first user has been bootstrapped).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.yaml
+  - postgres.yaml
+  - firefly.yaml
+  - cron.yaml
+  - httproute.yaml

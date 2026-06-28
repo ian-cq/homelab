@@ -1,0 +1,55 @@
+# Firefly III cron driver.
+#
+# Firefly's recurring transactions, bill matchers, and telemetry require
+# a daily kick on /api/v1/cron/<STATIC_CRON_TOKEN>. Upstream ships a
+# dedicated `fireflyiii/firefly-iii-cron` image, but it's just curl in a
+# loop; a native CronJob is simpler, observable via `kubectl get jobs`,
+# and uses the in-cluster Service so we don't depend on the public
+# hostname being reachable.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: firefly-cron
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: cron
+spec:
+  # 03:00 local time (UTC+8) = 19:00 UTC. The container TZ does not
+  # affect the cron schedule; kube-controller-manager interprets this
+  # field as UTC unless spec.timeZone is set.
+  schedule: "0 19 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: firefly-iii
+            app.kubernetes.io/component: cron
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              env:
+                - name: STATIC_CRON_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: firefly-app
+                      key: STATIC_CRON_TOKEN
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  exec curl -fsS --max-time 300 \
+                    "http://firefly:8080/api/v1/cron/${STATIC_CRON_TOKEN}"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  memory: 64Mi

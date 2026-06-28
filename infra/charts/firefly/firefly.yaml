@@ -1,0 +1,143 @@
+# Firefly III application (the PHP/Apache web app).
+#
+# Pinned to fireflyiii/core:version-6.6.3 (released 2026-05-21, latest
+# stable at deploy time per Docker Hub tag listing).
+#
+# Storage:
+# - /var/www/html/storage/upload: encrypted attachment blobs. PVC.
+# - /var/www/html/storage/export: CSV/JSON exports the user triggers
+#   from the UI. PVC (small).
+#
+# TRUSTED_PROXIES="**" tells Firefly to honor X-Forwarded-* headers from
+# any upstream; envoy-gateway already terminates TLS and sets them, and
+# the pod is not directly reachable from outside the cluster.
+#
+# APP_URL must match the public origin exactly (Firefly uses it for
+# absolute URLs in emails / OAuth redirects).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: firefly-upload
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: firefly-app
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: app
+data:
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "https://finance.62a.quanianitis.com"
+  SITE_OWNER: "work@quanianitis.com"
+  TZ: "Asia/Singapore"
+  TRUSTED_PROXIES: "**"
+  LOG_CHANNEL: "stack"
+  APP_LOG_LEVEL: "notice"
+  AUDIT_LOG_LEVEL: "emergency"
+  DB_CONNECTION: "pgsql"
+  DB_HOST: "firefly-postgres"
+  DB_PORT: "5432"
+  DB_DATABASE: "firefly"
+  DB_USERNAME: "firefly"
+  CACHE_DRIVER: "file"
+  SESSION_DRIVER: "file"
+  DEFAULT_LANGUAGE: "en_US"
+  DEFAULT_LOCALE: "equal"
+  # No outbound mailer configured; Firefly will log mail to file.
+  MAIL_MAILER: "log"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: app
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firefly
+  labels:
+    app.kubernetes.io/name: firefly-iii
+    app.kubernetes.io/component: app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: firefly-iii
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: firefly-iii
+        app.kubernetes.io/component: app
+    spec:
+      securityContext:
+        # Apache in the firefly image runs as www-data (uid 33). fsGroup
+        # makes the longhorn-mounted upload dir writable.
+        fsGroup: 33
+      containers:
+        - name: firefly
+          image: fireflyiii/core:version-6.6.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: firefly-app
+            - secretRef:
+                name: firefly-app
+          volumeMounts:
+            - name: upload
+              mountPath: /var/www/html/storage/upload
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: upload
+          persistentVolumeClaim:
+            claimName: firefly-upload
