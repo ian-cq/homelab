@@ -596,3 +596,54 @@ sudo systemctl restart k3s
 **Cause**: Kubernetes v1.36 added new status fields that ArgoCD 7.x does not recognize.
 
 **Fix**: Add `ignoreDifferences` for `/status` on DaemonSet/Deployment kinds and enable `ServerSideApply=true` (section 11).
+
+---
+
+## 13. North-south traffic architecture
+
+The cluster has two distinct networking layers; mixing them up is the single most common cause of "why doesn't my hostname work" bugs in this repo. They are not interchangeable:
+
+- **Cilium** (CNI + kube-proxy replacement only).
+  Pod networking, NetworkPolicy, socket-LB for ClusterIP from the host
+  netns, Hubble observability. Cilium's own Gateway-API controller is
+  **disabled** (`gatewayAPI.enabled: false` in
+  `infra/kustomize/cilium/values.yaml`); the `l2announcements` feature
+  is also off. Cilium does not terminate TLS and does not own any
+  Gateway/HTTPRoute on this cluster.
+
+- **Envoy Gateway** (north-south, gateway.networking.k8s.io v1).
+  GatewayClass `eg`, Gateway `gateway/public` with wildcard HTTPS
+  listener for `*.62a.quanianitis.com`, cert-manager-issued Let's
+  Encrypt cert. SecurityPolicy on the Gateway enforces Google OIDC +
+  JWT email allowlist (`infra/kustomize/gateway/securitypolicy.yaml`).
+  All HTTPRoutes (`argocd`, `hubble-ui`, `grafana`,
+  `kubernetes-dashboard`, `plane`, …) bind to this Gateway.
+
+- **FRP** (external edge → cluster ingress).
+  `frpc.service` on the host dials a remote `frps` on the VPS at
+  `103.40.207.125:7000` and forwards `:443` to the Envoy Gateway
+  Service ClusterIP `10.43.201.212:443` (svc
+  `gateway/envoy-gateway-public-1e7f3513`). The Service is
+  type=LoadBalancer but k3s is started with `--disable=servicelb`, so
+  the external IP stays `<pending>` and FRP punches the ClusterIP
+  directly from host netns via Cilium socket-LB. The Gateway's
+  `Programmed=False / AddressNotAssigned` status is therefore expected
+  and not a problem — FRP doesn't care about the Gateway address.
+
+**Traffic path (one hostname end-to-end):**
+
+```
+client → DNS *.62a.quanianitis.com → VPS 103.40.207.125:443
+       → frps → tcp passthrough → frpc on quanianitis-01
+       → 10.43.201.212:443 (envoy-gateway-public-1e7f3513 ClusterIP)
+       → Envoy Gateway listener (terminates TLS, applies SecurityPolicy)
+       → HTTPRoute match by Host header
+       → backend Service (e.g. argocd-server.argocd.svc:80)
+```
+
+**Historical scar tissue.** Earlier iterations of this repo used Cilium's
+Gateway-API controller (`cilium-gateway-public` Service in the
+`gateway` namespace) for the same role. That path was removed; the
+relevant lessons live in `~/claude-agent/AGENTS.md` under "Lessons
+from prior sessions". Do not re-enable `gatewayAPI` in Cilium without
+reading them.
