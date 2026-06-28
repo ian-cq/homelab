@@ -1,6 +1,3 @@
-# Grafana server TLS certificate.
-# Consumed by the grafana Deployment via GF_SERVER_PROTOCOL=https +
-# GF_SERVER_CERT_FILE / GF_SERVER_CERT_KEY (see values.yaml).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

@@ -18,4 +18,3 @@ spec:
     syncOptions:
       - RespectIgnoreDifferences=true
       - CreateNamespace=true
-

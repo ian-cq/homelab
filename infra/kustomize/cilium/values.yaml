@@ -15,32 +15,11 @@ hubble:
   ui:
     enabled: true
 
-# Cilium Gateway API controller DISABLED — migrated to Envoy Gateway.
-# Cilium's embedded-envoy Gateway path produced consistent 5s
-# upstream-connect timeouts (HTTP 503) on every Gateway-routed host on
-# this kernel/k3s combo (kernel 6.12, k3s v1.36, cilium 1.17.3), even
-# after full reinstall, bpf.tproxy=true, and various L2/LB-IPAM toggles.
-# See claude-agent/logs/2026-06-24-cilium-reinstall-result.md and
-# the migration log for the full diagnostic chain.
-#
-# Cilium continues to provide CNI + kube-proxy replacement. Gateway-API
-# is now served by envoy-gateway (see deployments/applications/system/
-# envoy-gateway.yaml) which provisions its own Envoy proxy per Gateway
-# in the envoy-gateway-system namespace.
 gatewayAPI:
   enabled: false
 
-# L2 announcements disabled. The CiliumL2AnnouncementPolicy on wlp4s0
-# (WiFi) appeared to correlate with envoy upstream-connect timeouts to
-# backend pods (503s on every Gateway-routed host). Removed pending a
-# better answer for advertising the LB IP on the LAN (BGP, or a wired
-# uplink before re-enabling L2).
 l2announcements:
   enabled: false
 
-# bpf.tproxy was set to true while debugging the cilium-gateway 503.
-# It's now inert (no cilium-managed envoy listeners) but harmless;
-# leaving it set so a future re-enable of cilium gatewayAPI starts in
-# the same state.
 bpf:
   tproxy: true

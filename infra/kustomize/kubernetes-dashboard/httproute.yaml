@@ -11,9 +11,6 @@ spec:
     - kubernetes.62a.quanianitis.com
   rules:
     - filters:
-        # Inject `Authorization: Bearer <admin-user-token>` so the
-        # dashboard's token login screen is auto-skipped. See
-        # credential-injection.yaml for the full rationale.
         - type: ExtensionRef
           extensionRef:
             group: gateway.envoyproxy.io

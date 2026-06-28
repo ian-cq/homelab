@@ -1,4 +1,3 @@
-# Minimal Prometheus for single-node homelab
 alertmanager:
   enabled: false
 kube-state-metrics:
@@ -6,7 +5,7 @@ kube-state-metrics:
 prometheus-pushgateway:
   enabled: false
 prometheus-node-exporter:
-  enabled: false  # deployed separately via node-exporter kustomize
+  enabled: false
 server:
   persistentVolume:
     enabled: true

@@ -21,7 +21,7 @@ spec:
     extensions:
       health_check:
         endpoint: "0.0.0.0:13133"
-  
+
     receivers:
       otlp:
         protocols:
@@ -38,13 +38,13 @@ spec:
               static_configs:
                 - targets:
                     - ${POD_IP}:8888
-  
+
     service:
       pipelines:
         metrics:
           receivers: [otlp, prometheus]
-          exporters: [logging] 
+          exporters: [logging]
         traces:
-          receivers: [otlp] 
+          receivers: [otlp]
           exporters: [logging]
       extensions: [health_check]

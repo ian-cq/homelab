@@ -3,6 +3,4 @@ kind: GatewayClass
 metadata:
   name: eg
 spec:
-  # Default controller name shipped by the envoy-gateway helm chart.
-  # Must match `gateway.controllerName` in the chart's values.
   controllerName: gateway.envoyproxy.io/gatewayclass-controller

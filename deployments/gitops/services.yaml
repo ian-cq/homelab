@@ -16,7 +16,7 @@ spec:
       namePrefix: quanianitis.in-cluster.services.
   project: default
   syncPolicy:
-    automated: 
+    automated:
       prune: true
       selfHeal: true
     syncOptions:

@@ -1,23 +1,3 @@
-# Kubernetes Dashboard (v2.7.0) — single-container, no kong, no auth pod.
-#
-# Adapted from
-# https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-# with the following deltas:
-#   - Namespace = monitoring (the chart-version installer lives here too).
-#   - The dashboard container serves PLAIN HTTP on port 9090 via
-#     `--insecure-bind-address=0.0.0.0 --insecure-port=9090
-#      --enable-insecure-login`. TLS is terminated upstream by Cloudflare
-#     and the FRP control channel is already TLS-wrapped, so plaintext
-#     inside the cluster is acceptable for this homelab.
-#   - The TLS port 8443, the auto-generated cert Secret and the
-#     `--auto-generate-certificates` flag are removed (not needed when we
-#     only serve HTTP).
-#   - Service exposes port 80 -> targetPort 9090 so frpc can dial the
-#     ClusterIP without a port translation.
-#   - `--namespace` flag is set to monitoring so the chart's internal
-#     bookkeeping resources are looked up in the right place.
-#   - admin-user ServiceAccount + cluster-admin binding are kept in
-#     admin-user-monitoring.yaml (sibling file).
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -179,8 +159,6 @@ spec:
             - --insecure-bind-address=0.0.0.0
             - --insecure-port=9090
             - --enable-insecure-login
-            # `--enable-skip-login` would allow anonymous access; intentionally
-            # omitted so the token/kubeconfig login screen is enforced.
           volumeMounts:
             - mountPath: /tmp
               name: tmp-volume

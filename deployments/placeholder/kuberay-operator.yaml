@@ -1,3 +1,2 @@
 path: "infra/kustomize/kuberay/kuberay-operator"
 namespace: "kuberay"
-

@@ -4,12 +4,6 @@ kind: Kustomization
 namespace: monitoring
 
 resources:
-  # namespace.yaml intentionally omitted: the `monitoring` Namespace is owned by
-  # the central namespaces Application (infra/kustomize/namespaces). Listing it
-  # here too caused a SharedResourceWarning and kept the namespaces app
-  # perpetually OutOfSync. CreateNamespace=true on this Application's
-  # syncPolicy still ensures the namespace exists if the central app hasn't
-  # applied yet.
   - certificate.yaml
   # httproute.yaml intentionally omitted: prometheus is NOT exposed via the
   # public Gateway / frpc tunnel. Ian's policy is that any host whose

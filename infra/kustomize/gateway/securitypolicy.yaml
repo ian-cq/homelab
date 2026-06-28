@@ -1,69 +1,3 @@
-# Envoy Gateway SecurityPolicy: Google OIDC for the entire public Gateway.
-#
-# Why one policy instead of per-HTTPRoute:
-#   SecurityPolicy.targetRefs is namespace-local (LocalPolicyTarget-
-#   ReferenceWithSectionName), so a SecurityPolicy targeting HTTPRoutes
-#   would have to live in each route's namespace (argocd, monitoring,
-#   plane, ...). Targeting the Gateway resource (which is itself in
-#   the `gateway` namespace) applies the OIDC filter to every listener
-#   on the Gateway, transparently covering every HTTPRoute attached to
-#   it -- current and future. One policy, one Secret, no per-namespace
-#   plumbing.
-#
-# Per-host callbacks, shared session cookie:
-#   `redirectURL` is intentionally NOT set, so Envoy uses its default
-#   template
-#     %REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback
-#   meaning each host handles its own /oauth2/callback. This matters
-#   because Envoy's OAuth2 filter binds the in-flight CSRF nonce
-#   cookie to the *originating* host; if we redirected to a single
-#   shared callback host (e.g. auth.62a), the browser would not send
-#   the originating host's CSRF cookie back to auth.62a and Envoy
-#   would reject the callback with `csrf token validation failed`.
-#   `cookieDomain` only scopes the post-auth session cookies, not the
-#   in-flight CSRF cookie -- this is a hard limitation of the upstream
-#   filter.
-#
-#   To still get a single-sign-on experience across subdomains we set
-#   `cookieDomain: 62a.quanianitis.com`. After a user logs in on any
-#   one host, the session cookies are scoped to the parent domain and
-#   sent automatically to every other *.62a.quanianitis.com host, so
-#   subsequent navigation does not re-trigger the OAuth dance.
-#
-#   Cost of this design: every protected hostname must be registered
-#   individually in the Google OAuth 2.0 Client's Authorized redirect
-#   URIs list. With ~5 hosts this is one-time work in the Console.
-#
-# Hosts covered today (all parented to gateway/public):
-#   - argocd.62a.quanianitis.com
-#   - grafana.62a.quanianitis.com
-#   - prometheus.62a.quanianitis.com
-#   - kubernetes.62a.quanianitis.com
-#   - mgmt.62a.quanianitis.com         (once plane is bootstrapped)
-#
-# Secret: `google-oauth-client` in this namespace. Created out-of-band
-# (kubectl apply, NOT in git) so the client_secret never lands in the
-# repo. Keys: `client-id`, `client-secret`. To re-create after a
-# disaster, copy from `monitoring/google-oauth-client` or rebuild from
-# the Google Cloud Console download.
-#
-# Authentication vs authorization:
-#   `oidc` only authenticates -- it proves "this request carries a
-#   valid Google session for *some* Google account". Without further
-#   gating, anyone with any Google account could reach every host on
-#   the Gateway. The `jwt` + `authorization` blocks below add an
-#   explicit email allowlist using the ID token's `email` claim.
-#
-#   Flow: oidc filter completes the OAuth dance and parks the ID token
-#   in a session cookie; on every subsequent request the jwt filter
-#   re-validates that ID token against Google's JWKS; the authorization
-#   filter then denies-by-default and only allows requests whose JWT
-#   `email` claim is in the allowlist below.
-#
-#   `audiences` is intentionally omitted: the client ID is held in the
-#   `google-oauth-client` Secret (clientIDRef pattern, keeps it out of
-#   git) and the OIDC callback already binds tokens to our client.
-#   Adding `audiences` would require inlining the client ID here.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -74,8 +8,6 @@ spec:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: public
-      # No sectionName: apply to all listeners (we currently have one,
-      # the wildcard HTTPS listener, but this keeps the policy general).
   oidc:
     provider:
       issuer: https://accounts.google.com
@@ -83,17 +15,7 @@ spec:
       name: google-oauth-client
     clientSecret:
       name: google-oauth-client
-    # redirectURL omitted on purpose -- see header comment.
-    # Single-sign-on across every *.62a.quanianitis.com host: post-auth
-    # session cookies scoped to the parent domain are sent by the
-    # browser to all subdomains.
     cookieDomain: 62a.quanianitis.com
-    # Pin the IdToken cookie to a stable name so the JWT filter below
-    # can read from it. Without this override Envoy appends a random
-    # suffix (e.g. `IdToken-15b6df4f`) and `jwt.extractFrom.cookies`
-    # has no way to match it. The OAuth2 filter writes the raw ID
-    # token JWT into this cookie on successful login; the JWT filter
-    # then validates it on every subsequent request.
     cookieNames:
       idToken: IdToken
       accessToken: AccessToken
@@ -108,30 +30,13 @@ spec:
         issuer: https://accounts.google.com
         remoteJWKS:
           uri: https://www.googleapis.com/oauth2/v3/certs
-        # Read the ID token from the OIDC IdToken cookie, NOT the
-        # default Authorization header (which OIDC never populates for
-        # browser sessions -- it stores tokens in cookies). Without
-        # this, every request after a successful login fails with
-        # `jwt_authn_access_denied{Jwt_is_missing}` because the JWT
-        # filter is looking in the wrong place. See `cookieNames`
-        # above for the pinned name.
         extractFrom:
           cookies:
             - IdToken
-        # Surface the email to upstream apps for logging / per-user
-        # behaviour. Apps that want to trust this header MUST also
-        # ensure they only accept it from the Gateway (e.g. by
-        # stripping it on ingress paths that bypass the Gateway).
         claimToHeaders:
           - claim: email
             header: x-auth-email
   authorization:
-    # Default-deny. Anything not matched by an Allow rule below is
-    # rejected with 403 *after* the user has completed the Google
-    # login -- so an unallowlisted user sees the OAuth consent screen,
-    # successfully authenticates with Google, then hits a 403 from
-    # Envoy. That's the correct behaviour: Google has no idea who is
-    # on Ian's allowlist.
     defaultAction: Deny
     rules:
       - name: allowlist
@@ -143,8 +48,6 @@ spec:
               - name: email
                 valueType: String
                 values:
-                  # Extend this list to add users. After editing, commit
-                  # and let Argo sync -- no Secret rotation needed.
                   - quanianitis@gmail.com
                   - work@quanianitis.com
                   - main@quanianitis.com

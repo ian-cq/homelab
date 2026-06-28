@@ -1,10 +1,3 @@
-# Wildcard TLS certificate for *.62a.quanianitis.com.
-#
-# Issued by the letsencrypt-prod ClusterIssuer (DNS-01 via Cloudflare
-# API token in kube-system/62a-quanianitis-com-cloudflare-api).
-#
-# Lives in `gateway` next to the Gateway so the Gateway can reference
-# the resulting Secret without a ReferenceGrant.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -18,8 +11,8 @@ spec:
   commonName: "*.62a.quanianitis.com"
   dnsNames:
     - "*.62a.quanianitis.com"
-  duration: 2160h    # 90d
-  renewBefore: 360h  # 15d
+  duration: 2160h
+  renewBefore: 360h
   privateKey:
     algorithm: ECDSA
     size: 256

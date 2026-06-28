@@ -8,4 +8,3 @@ resources:
   - obsidian-livesync.yaml
   - cloudflared.yaml
   - plane.yaml
-  # - text-summarizer.yaml

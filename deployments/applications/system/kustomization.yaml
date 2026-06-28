@@ -20,5 +20,3 @@ resources:
   - gateway.yaml
   - envoy-gateway-repo.yaml
   - envoy-gateway.yaml
-  # - opentelemetry.yaml
-  # - kuberay-operator.yaml

@@ -18,12 +18,6 @@ spec:
     targetRevision: v1.5.0
     helm:
       releaseName: eg
-      # Install into the `gateway` namespace. The per-Gateway Envoy
-      # data-plane Deployments + Services that Envoy Gateway provisions
-      # for each accepted Gateway also land in this namespace by default,
-      # so all Gateway machinery (controller + proxies) lives together.
-      # The `eg` GatewayClass (cluster-scoped) is authored in
-      # infra/kustomize/gateway/gatewayclass.yaml.
   project: default
   ignoreDifferences:
     - group: apps

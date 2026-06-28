@@ -1,9 +1,3 @@
-# Kubernetes Dashboard TLS certificate.
-# The public hostname is kubernetes.62a.quanianitis.com (renamed from the
-# earlier dashboard.62a alias to follow the kubernetes-as-canonical-name
-# convention).
-# Consumed by the dashboard Deployment via --tls-cert-file / --tls-key-file
-# (see dashboard-monitoring.yaml).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

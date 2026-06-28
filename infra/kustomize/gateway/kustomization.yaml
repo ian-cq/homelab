@@ -1,23 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Shared public Gateway for all *.62a.quanianitis.com hostnames.
-# Served by Envoy Gateway (see deployments/applications/system/
-# envoy-gateway.yaml), which provisions a per-Gateway Envoy
-# Deployment+Service in this same `gateway` namespace.
-#
-# Architecture:
-#   - One wildcard TLS listener (*.62a.quanianitis.com) on port 443.
-#   - Wildcard Certificate + Secret live in `gateway` next to the
-#     Gateway, so no ReferenceGrant is needed for the TLS cert ref.
-#   - HTTPRoutes live next to their backing Services in app namespaces
-#     (argocd, monitoring, plane). They parentRef this Gateway across
-#     namespaces (ParentRef cross-ns is governed by the Gateway's
-#     allowedRoutes selector, NOT by ReferenceGrant). BackendRefs are
-#     same-ns, so no ReferenceGrant is needed for routes either.
-#   - `allowedRoutes.from: All` lets any namespace attach without
-#     pinning the list here.
-
 namespace: gateway
 
 resources:

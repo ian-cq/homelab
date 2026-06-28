@@ -1,11 +1,7 @@
 defaultSettings:
-  # Store data on the 2TB HDD mounted at /data
   defaultDataPath: /data/longhorn
-  # Single node - 1 replica is sufficient
   defaultReplicaCount: 1
-  # Disable automatic upgrade checks
   upgradeChecker: false
-  # Backup to 500GB HDD
   backupTarget: nfs://192.168.1.50:/backup/longhorn
 
 persistence:
