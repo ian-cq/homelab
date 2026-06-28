@@ -65,7 +65,7 @@ pinned it manually.
 1. Scale `cilium-operator` and the gateway-api controller out of the
    reconcile race:
    ```sh
-   kubectl -n envoy-gateway-system scale deploy envoy-gateway --replicas=0
+   kubectl -n gateway scale deploy envoy-gateway --replicas=0
    ```
 2. Snapshot the live Service:
    ```sh
