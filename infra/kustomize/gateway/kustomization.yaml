@@ -9,4 +9,15 @@ resources:
   - gatewayclass.yaml
   - securitypolicy.yaml
   - securitypolicy-inbox.yaml
-  - api-key-secret.yaml
+  # gateway-api-key Secret is intentionally NOT declared in git. It is
+  # rotated out-of-band and stored in 1Password vault `quanianitis.com`
+  # under item `gateway-api-key-inbox`. Create / rotate it in-cluster with:
+  #   op item get gateway-api-key-inbox --vault quanianitis.com \
+  #       --fields label=cf-worker --reveal \
+  #     | kubectl create secret generic gateway-api-key -n gateway \
+  #       --from-file=cf-worker=/dev/stdin --dry-run=client -o yaml \
+  #     | kubectl apply -f -
+  #   kubectl annotate secret -n gateway gateway-api-key \
+  #     argocd.argoproj.io/sync-options=Prune=false --overwrite
+  # Full workflow + planned ExternalSecret migration:
+  #   infra/kustomize/external-secrets/SECRET_ROTATION.md
