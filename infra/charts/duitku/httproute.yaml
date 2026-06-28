@@ -1,0 +1,38 @@
+# Gateway-API HTTPRoute for the duitku Cloudflare-Worker webhook.
+#
+# Public hostname `duitku-inbox.62a.quanianitis.com` is wildcard-covered
+# by the `public` Gateway's existing wildcard listener and TLS cert
+# (`*.62a.quanianitis.com`). The route exposes ONLY /cf-inbox and
+# /healthz; everything else 404s at envoy.
+#
+# IMPORTANT: this route DOES NOT inherit `public-oidc` (OAuth) from the
+# Gateway because we attach a route-level SecurityPolicy
+# (`duitku-inbox-noauth`, see securitypolicy.yaml) that overrides
+# auth for this specific HTTPRoute. The actual authn is HMAC inside
+# the duitku-webhook binary - OIDC would block the Cloudflare Worker.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: duitku-inbox
+  labels:
+    app.kubernetes.io/name: duitku
+    app.kubernetes.io/component: webhook
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
+      namespace: gateway
+  hostnames:
+    - duitku-inbox.62a.quanianitis.com
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /cf-inbox
+        - path:
+            type: Exact
+            value: /healthz
+      backendRefs:
+        - name: duitku-webhook
+          port: 8080

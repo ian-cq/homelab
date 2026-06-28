@@ -1,0 +1,64 @@
+# duitku prune CronJob.
+#
+# Daily: walk /landing/{bank}/processed/ and unlink files older than
+# --retention-days. Never touches failed/ or inbox/. PII retention
+# default per the design doc (4.8): processed files keep for 30 days
+# then disappear; failed files stay until a human triages them.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: duitku-prune
+  labels:
+    app.kubernetes.io/name: duitku
+    app.kubernetes.io/component: prune
+spec:
+  schedule: "30 3 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: duitku
+            app.kubernetes.io/component: prune
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+          containers:
+            - name: prune
+              image: docker.io/library/duitku:0.1.0
+              imagePullPolicy: Never
+              args:
+                - prune
+                - --landing-dir=/landing
+                - --retention-days=30
+              env:
+                - name: DUITKU_LOG_LEVEL
+                  value: info
+              volumeMounts:
+                - name: landing
+                  mountPath: /landing
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: landing
+              persistentVolumeClaim:
+                claimName: duitku-landing

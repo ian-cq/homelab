@@ -1,0 +1,38 @@
+# duitku — Malaysian bank statement parser + Firefly III importer.
+#
+# The in-cluster deployment is the "phase 3" target of the design doc
+# (see github.com/ian-cq/docs:duitku.md). Today's shape:
+#
+#   - duitku-webhook Deployment: HTTPS receiver invoked by the
+#     Cloudflare Email Worker after Email Routing delivers a routed
+#     statement. HMAC-validated multipart POSTs land in the landing
+#     PVC at /landing/{bank}/inbox/.
+#   - duitku-sweep CronJob: parses files in the inbox and posts to
+#     Firefly III. Parsers are stubs in this phase; the CronJob runs
+#     and exits cleanly until parsers land.
+#   - duitku-prune CronJob: deletes processed/ files older than
+#     --retention-days.
+#
+# OAuth at the gateway is bypassed for this specific HTTPRoute via a
+# route-level SecurityPolicy with no auth (HMAC inside the receiver is
+# the actual authn). The Cloudflare Email Worker is NOT part of this
+# chart - it's deployed via `wrangler deploy` from the duitku repo's
+# worker/ subdirectory by the human.
+#
+# Image: docker.io/library/duitku:0.1.0 - built locally with nerdctl +
+# buildkit and loaded into the k3s containerd k8s.io namespace. As long
+# as the cluster is single-node, no registry is needed
+# (imagePullPolicy: Never). Migrating to ghcr.io/ian-cq/duitku once a
+# GH token with write:packages scope is available is a followup.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.yaml
+  - configmaps.yaml
+  - pvc.yaml
+  - webhook.yaml
+  - httproute.yaml
+  - securitypolicy.yaml
+  - sweep.yaml
+  - prune.yaml

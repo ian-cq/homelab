@@ -1,0 +1,120 @@
+# duitku webhook receiver.
+#
+# The HTTPS endpoint that the Cloudflare Email Worker POSTs each
+# extracted attachment to. HMAC-validates the request body + timestamp,
+# writes the attachment to /landing/{bank}/inbox/ with content-hash
+# filenames (so the same email forwarded twice produces one file, not
+# two), and writes a JSON sidecar with sender / message_id / sha256
+# alongside.
+#
+# Image is local-only (imagePullPolicy: Never): built by the operator
+# with nerdctl + buildkit and loaded into k3s containerd's k8s.io
+# namespace. Single-node cluster only - if/when the cluster scales out,
+# migrate to ghcr.io/ian-cq/duitku and remove `Never`.
+apiVersion: v1
+kind: Service
+metadata:
+  name: duitku-webhook
+  labels:
+    app.kubernetes.io/name: duitku
+    app.kubernetes.io/component: webhook
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: duitku
+    app.kubernetes.io/component: webhook
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: duitku-webhook
+  labels:
+    app.kubernetes.io/name: duitku
+    app.kubernetes.io/component: webhook
+spec:
+  replicas: 1
+  # Recreate so the RWO PVC mount transfers cleanly; the webhook is
+  # single-replica anyway and a brief 0-replica gap is fine - the
+  # Cloudflare Worker retries on 5xx with backoff.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: duitku
+      app.kubernetes.io/component: webhook
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: duitku
+        app.kubernetes.io/component: webhook
+    spec:
+      securityContext:
+        # distroless nonroot user is uid 65532. fsGroup so the
+        # longhorn-mounted /landing is writable by the binary.
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+      containers:
+        - name: webhook
+          image: docker.io/library/duitku:0.1.0
+          imagePullPolicy: Never
+          args:
+            - serve
+            - --addr=:8080
+            - --landing-dir=/landing
+            - --hmac-key-file=/etc/duitku/secret/WEBHOOK_HMAC_KEY
+          env:
+            - name: DUITKU_LOG_LEVEL
+              value: info
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: landing
+              mountPath: /landing
+            - name: secret
+              mountPath: /etc/duitku/secret
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: landing
+          persistentVolumeClaim:
+            claimName: duitku-landing
+        - name: secret
+          secret:
+            secretName: duitku
+            items:
+              - key: WEBHOOK_HMAC_KEY
+                path: WEBHOOK_HMAC_KEY

@@ -1,0 +1,21 @@
+# Landing PVC for duitku.
+#
+# Holds /landing/{bank}/inbox|processed|failed/ trees and state.db.
+# Shared RWO across the webhook Deployment and the sweep CronJob;
+# the webhook only writes new files into {bank}/inbox/, the sweep only
+# reads from inbox/ and writes to processed/ | failed/ | state.db.
+# Both pods land on the same node thanks to RWO + longhorn CSI.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: duitku-landing
+  labels:
+    app.kubernetes.io/name: duitku
+    app.kubernetes.io/component: landing
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

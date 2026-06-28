@@ -9,3 +9,4 @@ resources:
   - cloudflared.yaml
   - plane.yaml
   - firefly.yaml
+  - duitku.yaml

@@ -1,0 +1,34 @@
+# Route-level SecurityPolicy that overrides the Gateway-wide
+# `public-oidc` policy for the duitku-inbox HTTPRoute.
+#
+# Envoy Gateway resolves multiple SecurityPolicy attachments by
+# specificity: a route-level SP wins over the Gateway-level one. Our
+# Gateway-level SP requires Google OIDC + email allowlist on every
+# attached route by default, but the Cloudflare Email Worker cannot
+# present a Google JWT, so we deliberately strip auth on this route.
+#
+# The real authn for this endpoint is HMAC over the request body +
+# timestamp inside the duitku-webhook binary (see
+# github.com/ian-cq/duitku:internal/webhook). The Gateway here just
+# does TLS termination + hostname routing.
+#
+# Followup (design doc 9): add a separate SecurityPolicy with a CIDR
+# allowlist of Cloudflare Workers egress IPs as defence in depth.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: duitku-inbox-noauth
+  labels:
+    app.kubernetes.io/name: duitku
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: duitku-inbox
+  # No oidc, no jwt, no basicAuth - this route bypasses Gateway-level
+  # OIDC entirely. Authorization stanza explicitly Allows so an EG
+  # implementation that requires authorization to be set (rather than
+  # inheriting an Allow default) doesn't fail open OR closed.
+  authorization:
+    defaultAction: Allow
+    rules: []
