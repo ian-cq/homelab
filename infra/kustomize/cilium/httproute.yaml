@@ -14,7 +14,9 @@ metadata:
   namespace: cilium-system
 spec:
   parentRefs:
-    - name: public
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public
       namespace: gateway
   hostnames:
     - hubble.62a.quanianitis.com
