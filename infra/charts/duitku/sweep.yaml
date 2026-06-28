@@ -36,7 +36,7 @@ spec:
             fsGroup: 65532
           containers:
             - name: sweep
-              image: docker.io/library/duitku:0.3.0
+              image: docker.io/library/duitku:0.4.0
               imagePullPolicy: Never
               args:
                 - sweep
@@ -46,6 +46,8 @@ spec:
               env:
                 - name: DUITKU_LOG_LEVEL
                   value: INFO
+                - name: FIREFLY_BASE_URL
+                  value: https://finance.62a.quanianitis.com
                 - name: FIREFLY_PAT
                   valueFrom:
                     secretKeyRef:

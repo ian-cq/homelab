@@ -34,7 +34,7 @@ spec:
             fsGroup: 65532
           containers:
             - name: prune
-              image: docker.io/library/duitku:0.3.0
+              image: docker.io/library/duitku:0.4.0
               imagePullPolicy: Never
               args:
                 - prune
