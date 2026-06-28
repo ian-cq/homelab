@@ -46,6 +46,24 @@
 # repo. Keys: `client-id`, `client-secret`. To re-create after a
 # disaster, copy from `monitoring/google-oauth-client` or rebuild from
 # the Google Cloud Console download.
+#
+# Authentication vs authorization:
+#   `oidc` only authenticates -- it proves "this request carries a
+#   valid Google session for *some* Google account". Without further
+#   gating, anyone with any Google account could reach every host on
+#   the Gateway. The `jwt` + `authorization` blocks below add an
+#   explicit email allowlist using the ID token's `email` claim.
+#
+#   Flow: oidc filter completes the OAuth dance and parks the ID token
+#   in a session cookie; on every subsequent request the jwt filter
+#   re-validates that ID token against Google's JWKS; the authorization
+#   filter then denies-by-default and only allows requests whose JWT
+#   `email` claim is in the allowlist below.
+#
+#   `audiences` is intentionally omitted: the client ID is held in the
+#   `google-oauth-client` Secret (clientIDRef pattern, keeps it out of
+#   git) and the OIDC callback already binds tokens to our client.
+#   Adding `audiences` would require inlining the client ID here.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -75,3 +93,39 @@ spec:
       - openid
       - email
       - profile
+  jwt:
+    providers:
+      - name: google
+        issuer: https://accounts.google.com
+        remoteJWKS:
+          uri: https://www.googleapis.com/oauth2/v3/certs
+        # Surface the email to upstream apps for logging / per-user
+        # behaviour. Apps that want to trust this header MUST also
+        # ensure they only accept it from the Gateway (e.g. by
+        # stripping it on ingress paths that bypass the Gateway).
+        claimToHeaders:
+          - claim: email
+            header: x-auth-email
+  authorization:
+    # Default-deny. Anything not matched by an Allow rule below is
+    # rejected with 403 *after* the user has completed the Google
+    # login -- so an unallowlisted user sees the OAuth consent screen,
+    # successfully authenticates with Google, then hits a 403 from
+    # Envoy. That's the correct behaviour: Google has no idea who is
+    # on Ian's allowlist.
+    defaultAction: Deny
+    rules:
+      - name: allowlist
+        action: Allow
+        principal:
+          jwt:
+            provider: google
+            claims:
+              - name: email
+                valueType: String
+                values:
+                  # Extend this list to add users. After editing, commit
+                  # and let Argo sync -- no Secret rotation needed.
+                  - quanianitis@gmail.com
+                  - work@quanianitis.com
+                  - main@quanianitis.com
