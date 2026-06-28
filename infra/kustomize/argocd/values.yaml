@@ -7,6 +7,10 @@ dex:
 notifications:
   enabled: false
 applicationSet:
+  # NOTE: this is a no-op since chart 6.9.0 - the applicationset controller
+  # is always deployed. Left in place to document intent. To actually drop the
+  # controller, override its Deployment via extraObjects with replicas: 0, or
+  # delete the chart-rendered manifest in a kustomize patch.
   enabled: false
 server:
   service:
@@ -14,10 +18,18 @@ server:
     nodePortHttp: 30080
     nodePortHttps: 30443
 configs:
-  params:
-    server.insecure: true
   cm:
     users.anonymous.enabled: "true"
+    # Pin resource tracking to label-based (v2 default) across the v2.13 -> v3.4
+    # upgrade. v3.0 flipped the default to annotation-based, which has a
+    # documented orphan-resource edge case on the first post-upgrade sync of
+    # any Application whose first action would be a delete. Migrating to
+    # annotation tracking should be a separate, deliberate change, not a
+    # side-effect of unblocking the .status.terminatingReplicas bug.
+    # See: argo-cd/docs/operator-manual/upgrading/2.14-3.0.md
+    application.resourceTrackingMethod: label
+  params:
+    server.insecure: true
   rbac:
     policy.default: role:admin
   secret:
